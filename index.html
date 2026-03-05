@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EKG Rhythm Master: ICU Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            background-color: #020617;
+            color: #f8fafc;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden;
+        }
+
+        .ekg-container {
+            background: #000;
+            border: 4px solid #1e293b;
+            position: relative;
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.1);
+        }
+
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(16, 185, 129, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16, 185, 129, 0.15) 1px, transparent 1px),
+                linear-gradient(rgba(16, 185, 129, 0.05) 5px, transparent 5px),
+                linear-gradient(90deg, rgba(16, 185, 129, 0.05) 5px, transparent 5px);
+            background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+        }
+
+        canvas {
+            position: relative;
+            z-index: 10;
+        }
+
+        .crt-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes alert-pulse {
+            0%, 100% { background-color: rgba(239, 68, 68, 0); }
+            50% { background-color: rgba(239, 68, 68, 0.2); }
+        }
+
+        .is-emergency {
+            animation: alert-pulse 0.8s infinite;
+        }
+
+        .btn-action {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-action:hover:not(:disabled) {
+            transform: scale(1.02);
+            filter: brightness(1.2);
+            border-color: #10b981;
+        }
+
+        .btn-action:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <!-- Sidebar Stats -->
+        <div class="lg:col-span-1 space-y-4">
+            <div class="stat-card rounded-2xl p-6">
+                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Total XP</h2>
+                <div id="score-val" class="text-4xl font-black text-emerald-400 font-mono">0000</div>
+                <div id="streak-badge" class="mt-2 inline-block px-2 py-1 bg-emerald-900/50 text-emerald-400 text-xs rounded border border-emerald-500/30 opacity-0 transition-opacity">
+                    STREAK x<span id="streak-val">1</span>
+                </div>
+            </div>
+
+            <div class="stat-card rounded-2xl p-6">
+                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Patient Stability</h2>
+                <div class="w-full h-4 bg-slate-800 rounded-full mt-2 overflow-hidden">
+                    <div id="health-bar" class="h-full bg-emerald-500 w-full transition-all duration-500"></div>
+                </div>
+                <p id="stability-text" class="text-[10px] mt-2 text-slate-400 text-center uppercase tracking-tighter">Hemodynamically Stable</p>
+            </div>
+
+            <div class="stat-card rounded-2xl p-6 hidden lg:block">
+                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">ICU Event Log</h2>
+                <div id="log-container" class="space-y-2 max-h-48 overflow-y-auto text-[11px] font-mono text-slate-400">
+                    <div>> Telemetry linked...</div>
+                    <div>> Monitoring Lead II...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Monitor -->
+        <div class="lg:col-span-3 space-y-6">
+            <div id="main-monitor" class="ekg-container rounded-3xl overflow-hidden aspect-video lg:aspect-auto lg:h-[420px]">
+                <div class="grid-bg"></div>
+                <div class="crt-overlay"></div>
+                
+                <!-- Monitor Header -->
+                <div class="absolute top-4 left-6 z-30 flex items-center gap-4">
+                    <div class="flex flex-col">
+                        <span class="text-emerald-500 font-mono text-sm font-bold">II</span>
+                        <span class="text-[10px] text-emerald-700">x1.0</span>
+                    </div>
+                    <div class="h-8 w-[1px] bg-emerald-900/50"></div>
+                    <div class="flex flex-col">
+                        <span class="text-white text-xs font-bold uppercase" id="patient-name">Patient: Bed 09</span>
+                        <span class="text-[10px] text-slate-500">Sweep: 25mm/s</span>
+                    </div>
+                </div>
+
+                <!-- Vital Signs Display -->
+                <div class="absolute top-4 right-6 z-30 text-right">
+                    <div class="flex items-baseline justify-end gap-1">
+                        <span class="text-6xl font-black text-emerald-400 font-mono leading-none" id="hr-val">--</span>
+                        <span class="text-emerald-600 text-xs font-bold">BPM</span>
+                    </div>
+                    <div class="flex gap-4 justify-end mt-2">
+                        <div class="text-cyan-400 font-mono"><span class="text-[10px] text-slate-500">SpO2</span> 97%</div>
+                        <div class="text-yellow-400 font-mono"><span class="text-[10px] text-slate-500">MAP</span> 88</div>
+                    </div>
+                </div>
+
+                <canvas id="ekg-canvas"></canvas>
+
+                <div id="alert-banner" class="absolute inset-0 pointer-events-none flex items-center justify-center z-40 opacity-0 transition-opacity duration-300">
+                    <div class="bg-red-600 text-white px-10 py-5 text-3xl font-black italic uppercase tracking-tighter shadow-2xl">Lethal Arrhythmia</div>
+                </div>
+            </div>
+
+            <!-- Interaction Zone -->
+            <div id="interaction-zone" class="stat-card rounded-3xl p-6 border-slate-700">
+                <div id="question-prompt" class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-bold text-slate-200">Interpret Rhythm:</h3>
+                        <span id="timer-text" class="text-xs font-mono text-cyan-400">Response Window</span>
+                    </div>
+                    <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                        <div id="timer-bar" class="h-full bg-cyan-500 w-full transition-all duration-100"></div>
+                    </div>
+                </div>
+
+                <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Dynamic Buttons -->
+                </div>
+
+                <div id="feedback-zone" class="hidden flex flex-col items-stretch gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div class="flex items-start gap-5">
+                        <div id="res-icon" class="w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center text-3xl shadow-lg"></div>
+                        <div>
+                            <h4 id="res-title" class="font-bold text-xl"></h4>
+                            <p id="res-body" class="text-slate-400 text-sm max-w-2xl leading-relaxed mt-1"></p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row items-center gap-4 justify-end">
+                        <button id="retry-btn" class="hidden w-full md:w-auto px-8 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold uppercase tracking-wider transition-all">
+                            Try Again
+                        </button>
+                        <button id="next-btn" class="w-full md:w-auto px-10 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black uppercase tracking-wider transition-all shadow-xl shadow-emerald-900/40">
+                            Next Case
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('ekg-canvas');
+        const ctx = canvas.getContext('2d');
+        const optionsGrid = document.getElementById('options-grid');
+        const feedbackZone = document.getElementById('feedback-zone');
+        const questionPrompt = document.getElementById('question-prompt');
+        const retryBtn = document.getElementById('retry-btn');
+        const nextBtn = document.getElementById('next-btn');
+        
+        let score = 0;
+        let streak = 0;
+        let health = 100;
+        let currentRhythm = null;
+        let timerInterval = null;
+        let timeRemaining = 100;
+        let currentChoices = [];
+        let hasFailedCurrent = false;
+
+        let scanX = 0;
+        const scanSpeed = 3;
+        const points = [];
+        let waveY = 0;
+
+        const RHYTHM_TYPES = {
+            NSR: {
+                name: "Normal Sinus Rhythm",
+                hr: () => 72,
+                emergency: false,
+                draw: (t) => {
+                    const cycle = t % 100;
+                    if (cycle < 10) return -Math.sin(cycle * 0.3) * 6; // P
+                    if (cycle >= 15 && cycle < 20) return -((cycle - 15) * 15); // Q
+                    if (cycle >= 20 && cycle < 25) return (cycle - 22.5) * 45; // R
+                    if (cycle >= 25 && cycle < 30) return 30 - (cycle - 25) * 8; // S
+                    if (cycle >= 50 && cycle < 70) return -Math.sin((cycle - 50) * 0.15) * 10; // T
+                    return 0;
+                },
+                info: "Standard 1:1 P-to-QRS ratio. PR interval is normal (0.12-0.20s)."
+            },
+            VTACH: {
+                name: "Ventricular Tachycardia",
+                hr: () => 170,
+                emergency: true,
+                draw: (t) => Math.sin(t * 0.3) * 50 + (Math.random() * 8),
+                info: "Wide, monomorphic complexes starting in the ventricles. Immediate assessment of pulse is required!"
+            },
+            VFIB: {
+                name: "Ventricular Fibrillation",
+                hr: () => 0,
+                emergency: true,
+                draw: (t) => (Math.random() - 0.5) * 60,
+                info: "Chaotic quivering of the ventricles. No pulse, no output. Defibrillation is mandatory."
+            },
+            AFIB: {
+                name: "Atrial Fibrillation",
+                hr: () => 124,
+                emergency: false,
+                draw: (t) => {
+                    const noise = (Math.random() - 0.5) * 8;
+                    const qrs = (t % (50 + Math.random() * 60) < 5) ? -70 : 0;
+                    return noise + (qrs === -70 ? (Math.random() > 0.5 ? -70 : 0) : 0);
+                },
+                info: "Irregularly irregular rhythm with no discernible P-waves. Baseline is fibrillatory."
+            },
+            AFLUTTER: {
+                name: "Atrial Flutter",
+                hr: () => 75,
+                emergency: false,
+                draw: (t) => {
+                    const saw = Math.abs((t % 20) - 10) * 2 - 10;
+                    const qrs = (t % 80 < 5) ? -80 : 0;
+                    return saw + qrs;
+                },
+                info: "Re-entrant circuit in the atria causing 'sawtooth' waves. Look for fixed conduction ratios."
+            },
+            TORSADES: {
+                name: "Torsades de Pointes",
+                hr: () => 210,
+                emergency: true,
+                draw: (t) => Math.sin(t * 0.4) * (Math.sin(t * 0.05) * 60),
+                info: "Polymorphic V-Tach where complexes 'twist' around the baseline. Often secondary to prolonged QT."
+            },
+            WENCKEBACH: {
+                name: "2nd Degree Type I (Wenckebach)",
+                hr: () => 52,
+                emergency: false,
+                draw: (t) => {
+                    const cycle = t % 400; 
+                    const beat = cycle % 100;
+                    let prShift = 0;
+                    if (cycle >= 100 && cycle < 200) prShift = 10;
+                    if (cycle >= 200 && cycle < 300) prShift = 25;
+                    if (cycle >= 300) { 
+                        if (beat < 10) return -6; 
+                        return 0;
+                    }
+                    if (beat < 10) return -6; 
+                    if (beat >= 15 + prShift && beat < 20 + prShift) return -70; 
+                    return 0;
+                },
+                info: "Successive lengthening of the PR interval until a QRS complex is dropped. Generally benign."
+            },
+            MOBITZ2: {
+                name: "2nd Degree Type II (Mobitz II)",
+                hr: () => 40,
+                emergency: true,
+                draw: (t) => {
+                    const cycle = t % 200; 
+                    const beat = cycle % 100;
+                    const drop = cycle >= 100;
+                    if (beat < 10) return -8; 
+                    if (!drop && beat >= 25 && beat < 30) return -80; 
+                    return 0;
+                },
+                info: "Constant PR intervals followed by unexpected dropped QRS complexes. High risk for 3rd Degree Block!"
+            },
+            ASYSTOLE: {
+                name: "Asystole",
+                hr: () => 0,
+                emergency: true,
+                draw: (t) => (Math.random() - 0.5) * 2,
+                info: "Total absence of ventricular electrical activity. Confirm in two leads and start CPR."
+            },
+            JUNCTIONAL: {
+                name: "Junctional Rhythm",
+                hr: () => 45,
+                emergency: false,
+                draw: (t) => {
+                    const beat = t % 130;
+                    if (beat > 10 && beat < 15) return -70; 
+                    if (beat > 30 && beat < 45) return -10; 
+                    return 0;
+                },
+                info: "AV node pacemaking (40-60 bpm). P-waves are either absent, inverted, or retrograde."
+            }
+        };
+
+        function resize() {
+            const parent = canvas.parentElement;
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+            waveY = canvas.height / 2;
+        }
+
+        function drawLoop() {
+            ctx.clearRect(scanX, 0, 40, canvas.height); 
+            
+            ctx.strokeStyle = '#4ade80';
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#4ade80';
+
+            ctx.beginPath();
+            const val = currentRhythm.draw(Date.now() / 10);
+            const targetY = waveY + val;
+            
+            if (scanX === 0) ctx.moveTo(0, targetY);
+            else ctx.moveTo(scanX - scanSpeed, points[points.length-1] || targetY);
+            
+            ctx.lineTo(scanX, targetY);
+            ctx.stroke();
+
+            points.push(targetY);
+            if (points.length > 100) points.shift();
+
+            scanX += scanSpeed;
+            if (scanX > canvas.width) {
+                scanX = 0;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            requestAnimationFrame(drawLoop);
+        }
+
+        function loadPatient() {
+            feedbackZone.classList.add('hidden');
+            questionPrompt.classList.remove('hidden');
+            optionsGrid.classList.remove('hidden');
+            retryBtn.classList.add('hidden');
+            document.getElementById('main-monitor').classList.remove('is-emergency');
+            document.getElementById('alert-banner').classList.replace('opacity-100', 'opacity-0');
+            
+            const keys = Object.keys(RHYTHM_TYPES);
+            currentRhythm = RHYTHM_TYPES[keys[Math.floor(Math.random() * keys.length)]];
+            hasFailedCurrent = false;
+            
+            document.getElementById('hr-val').innerText = currentRhythm.hr() || "0";
+            
+            if(currentRhythm.emergency) {
+                document.getElementById('main-monitor').classList.add('is-emergency');
+                document.getElementById('alert-banner').classList.replace('opacity-0', 'opacity-100');
+            }
+
+            // Generate choices once per patient
+            currentChoices = [currentRhythm.name];
+            while(currentChoices.length < 4) {
+                const randomName = RHYTHM_TYPES[keys[Math.floor(Math.random() * keys.length)]].name;
+                if(!currentChoices.includes(randomName)) currentChoices.push(randomName);
+            }
+            currentChoices.sort(() => Math.random() - 0.5);
+
+            renderOptions();
+            startTimer();
+            addLog(`Case Started: Monitoring Bed ${Math.floor(Math.random()*20 + 1)}`);
+        }
+
+        function renderOptions() {
+            optionsGrid.innerHTML = '';
+            currentChoices.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = "btn-action p-5 bg-slate-800/50 border border-slate-700 rounded-2xl text-left hover:bg-slate-700 font-bold text-sm tracking-tight";
+                btn.innerText = c;
+                btn.onclick = () => handleAnswer(c);
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function startTimer() {
+            timeRemaining = 100;
+            const bar = document.getElementById('timer-bar');
+            if(timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                timeRemaining -= 0.8;
+                bar.style.width = timeRemaining + '%';
+                if(timeRemaining <= 0) handleAnswer(null);
+            }, 100);
+        }
+
+        function handleAnswer(choice) {
+            clearInterval(timerInterval);
+            questionPrompt.classList.add('hidden');
+            optionsGrid.classList.add('hidden');
+            feedbackZone.classList.remove('hidden');
+
+            const isCorrect = choice === currentRhythm.name;
+            const title = document.getElementById('res-title');
+            const body = document.getElementById('res-body');
+            const icon = document.getElementById('res-icon');
+
+            if(isCorrect) {
+                // Scoring logic only applies if they haven't failed this specific rhythm yet
+                if (!hasFailedCurrent) {
+                    streak++;
+                    const speedBonus = Math.floor(timeRemaining / 2);
+                    const pointsGained = (100 + speedBonus) * streak;
+                    score += pointsGained;
+                    addLog(`Success: Rhythm matched. Streak x${streak}`);
+                } else {
+                    addLog(`Resolved: Rhythm identified correctly after review.`);
+                }
+                
+                title.innerText = "Accurate Interpretation";
+                title.className = "font-bold text-xl text-emerald-400";
+                icon.innerHTML = "✓";
+                icon.className = "w-16 h-16 rounded-2xl flex items-center justify-center text-3xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                body.innerText = `${currentRhythm.info}`;
+                
+                retryBtn.classList.add('hidden');
+            } else {
+                // If it was the first failure, deduct health
+                if (!hasFailedCurrent) {
+                    streak = 0;
+                    health -= 25;
+                    updateHealth();
+                    hasFailedCurrent = true;
+                    addLog(`Error: Patient at risk due to misinterpretation.`);
+                }
+                
+                title.innerText = choice === null ? "Critical Delay" : "Clinical Oversight";
+                title.className = "font-bold text-xl text-red-500";
+                icon.innerHTML = "!";
+                icon.className = "w-16 h-16 rounded-2xl flex items-center justify-center text-3xl bg-red-500/20 text-red-500 border border-red-500/30";
+                body.innerText = `The observed rhythm is actually ${currentRhythm.name}. \n\nLearning Point: ${currentRhythm.info}`;
+                
+                retryBtn.classList.remove('hidden');
+            }
+
+            document.getElementById('score-val').innerText = score.toString().padStart(4, '0');
+            document.getElementById('streak-val').innerText = streak;
+            document.getElementById('streak-badge').style.opacity = streak > 1 ? "1" : "0";
+
+            if(health <= 0) triggerGameOver();
+        }
+
+        function retryRound() {
+            feedbackZone.classList.add('hidden');
+            questionPrompt.classList.remove('hidden');
+            optionsGrid.classList.remove('hidden');
+            startTimer(); // Restart timer for the second attempt
+        }
+
+        function updateHealth() {
+            const bar = document.getElementById('health-bar');
+            const text = document.getElementById('stability-text');
+            bar.style.width = health + '%';
+            
+            if(health < 40) {
+                bar.className = "h-full bg-red-500 w-full transition-all duration-500";
+                text.innerText = "Critical Instability";
+                text.classList.add('text-red-500', 'font-bold');
+            } else if (health < 75) {
+                bar.className = "h-full bg-yellow-500 w-full transition-all duration-500";
+                text.innerText = "Hemodynamics Compensating";
+            }
+        }
+
+        function addLog(msg) {
+            const container = document.getElementById('log-container');
+            const div = document.createElement('div');
+            div.innerText = `> ${msg}`;
+            container.prepend(div);
+        }
+
+        function triggerGameOver() {
+            document.body.innerHTML = `
+                <div class="text-center p-12 bg-slate-900 rounded-[3rem] border-4 border-red-600 shadow-2xl max-w-lg w-full">
+                    <div class="text-7xl mb-6">🏥</div>
+                    <h1 class="text-5xl font-black text-white mb-2 tracking-tighter italic">UNIT CRASH</h1>
+                    <p class="text-red-500 font-bold uppercase tracking-widest mb-10 text-sm">Patient Safety Compromised</p>
+                    <div class="bg-black/50 p-8 rounded-3xl mb-10 border border-white/5">
+                        <div class="text-slate-500 uppercase text-xs font-bold mb-1">Final XP Accumulation</div>
+                        <div class="text-6xl font-black text-emerald-400 font-mono">${score}</div>
+                    </div>
+                    <button onclick="location.reload()" class="w-full py-5 bg-white text-black rounded-2xl font-black text-xl hover:bg-emerald-400 transition-all shadow-xl">START NEW SHIFT</button>
+                </div>
+            `;
+        }
+
+        nextBtn.onclick = loadPatient;
+        retryBtn.onclick = retryRound;
+        window.addEventListener('resize', resize);
+        
+        window.onload = () => {
+            resize();
+            loadPatient();
+            drawLoop();
+        };
+    </script>
+</body>
+</html>
