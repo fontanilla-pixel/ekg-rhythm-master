@@ -4,525 +4,1495 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EKG Rhythm Master: ICU Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-        
+        :root {
+            --green:    #00e676;
+            --green-dim: #00b248;
+            --green-bg: rgba(0,230,118,0.07);
+            --cyan:     #00e5ff;
+            --yellow:   #ffd740;
+            --red:      #ff1744;
+            --red-dim:  #b71c1c;
+            --bg:       #05070d;
+            --surface:  #0a0f1e;
+            --surface2: #111827;
+            --border:   rgba(255,255,255,0.07);
+            --text:     #e2e8f0;
+            --muted:    #475569;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            background-color: #020617;
-            color: #f8fafc;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,180,90,0.08) 0%, transparent 70%);
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            overflow-x: hidden;
+        }
+
+        /* ─── Layout ─────────────────────────────── */
+        .app {
+            width: 100%;
+            max-width: 1180px;
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            grid-template-rows: auto auto;
+            gap: 14px;
+        }
+
+        /* ─── Sidebar ─────────────────────────────── */
+        .sidebar {
+            grid-row: 1 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .panel-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        /* Score */
+        .score-num {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 46px;
+            color: var(--green);
+            line-height: 1;
+            text-shadow: 0 0 24px rgba(0,230,118,0.4);
+            letter-spacing: -1px;
+        }
+
+        .streak-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            min-height: 22px;
+        }
+
+        .streak-badge {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            padding: 3px 8px;
+            background: rgba(0,230,118,0.1);
+            border: 1px solid rgba(0,230,118,0.3);
+            border-radius: 4px;
+            color: var(--green);
+            transition: opacity 0.3s;
+        }
+
+        /* Difficulty */
+        .diff-track {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+        .diff-pip {
+            flex: 1;
+            height: 5px;
+            border-radius: 3px;
+            background: var(--surface2);
+            transition: background 0.4s;
+        }
+        .diff-pip.active { background: var(--green); box-shadow: 0 0 8px rgba(0,230,118,0.5); }
+        .diff-pip.active.l2 { background: var(--yellow); box-shadow: 0 0 8px rgba(255,215,64,0.5); }
+        .diff-pip.active.l3 { background: #ff9100; box-shadow: 0 0 8px rgba(255,145,0,0.5); }
+        .diff-pip.active.l4 { background: var(--red); box-shadow: 0 0 8px rgba(255,23,68,0.5); }
+
+        .diff-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--green);
+            margin-top: 6px;
+            transition: color 0.4s;
+        }
+
+        /* Health */
+        .health-track {
+            height: 8px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 4px;
             overflow: hidden;
+            margin-top: 6px;
+        }
+        .health-fill {
+            height: 100%;
+            background: var(--green);
+            border-radius: 4px;
+            transition: width 0.5s ease, background 0.5s;
+            box-shadow: 0 0 10px rgba(0,230,118,0.4);
+        }
+        .health-note {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 6px;
+            font-family: 'Share Tech Mono', monospace;
         }
 
-        .ekg-container {
-            background: #000;
-            border: 4px solid #1e293b;
+        /* Log */
+        .log-list {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            max-height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .log-list .log-entry { opacity: 0.7; }
+        .log-list .log-entry.new { color: var(--green); opacity: 1; }
+        .log-list .log-entry.err { color: var(--red); opacity: 1; }
+
+        /* Progress bar */
+        .progress-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+        .queue-bar {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+        .queue-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--surface2);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: background 0.3s;
+        }
+        .queue-dot.done { background: var(--green-dim); }
+        .queue-dot.current { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+        /* ─── Monitor ──────────────────────────────── */
+        .monitor-wrap {
+            background: #010408;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
             position: relative;
-            box-shadow: 0 0 40px rgba(16, 185, 129, 0.1);
+            height: 340px;
         }
 
-        .grid-bg {
+        /* subtle grid */
+        .monitor-wrap::before {
+            content: '';
             position: absolute;
             inset: 0;
-            background-image: 
-                linear-gradient(rgba(16, 185, 129, 0.15) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(16, 185, 129, 0.15) 1px, transparent 1px),
-                linear-gradient(rgba(16, 185, 129, 0.05) 5px, transparent 5px),
-                linear-gradient(90deg, rgba(16, 185, 129, 0.05) 5px, transparent 5px);
-            background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+            background-image:
+                linear-gradient(rgba(0,230,118,0.07) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,230,118,0.07) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 1;
         }
 
-        canvas {
-            position: relative;
+        /* scanline CRT overlay */
+        .monitor-wrap::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.06) 2px,
+                rgba(0,0,0,0.06) 4px
+            );
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        #ekg-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+        }
+
+        /* Monitor HUD */
+        .monitor-hud-tl {
+            position: absolute;
+            top: 14px; left: 18px;
             z-index: 10;
         }
+        .hud-lead {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--green);
+            text-shadow: 0 0 10px var(--green);
+        }
+        .hud-sub {
+            font-size: 9px;
+            color: rgba(0,230,118,0.4);
+            font-family: 'Share Tech Mono', monospace;
+            margin-top: 1px;
+        }
 
-        .crt-overlay {
+        .monitor-hud-tr {
             position: absolute;
-            inset: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
-            z-index: 20;
+            top: 10px; right: 16px;
+            z-index: 10;
+            text-align: right;
+        }
+        .hud-hr {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 58px;
+            color: var(--green);
+            line-height: 1;
+            text-shadow: 0 0 30px rgba(0,230,118,0.5);
+        }
+        .hud-bpm {
+            font-size: 9px;
+            color: var(--green-dim);
+            font-family: 'Share Tech Mono', monospace;
+            letter-spacing: 0.2em;
+        }
+        .hud-vitals {
+            display: flex;
+            gap: 14px;
+            margin-top: 6px;
+            justify-content: flex-end;
+        }
+        .hud-vital {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+        }
+        .hud-vital span { font-size: 9px; color: var(--muted); }
+
+        .monitor-hud-bl {
+            position: absolute;
+            bottom: 12px; left: 18px;
+            z-index: 10;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: rgba(0,230,118,0.3);
         }
 
-        .stat-card {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .monitor-hud-br {
+            position: absolute;
+            bottom: 12px; right: 18px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pulse-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse-blink 1.2s infinite;
+        }
+        @keyframes pulse-blink {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+        .live-text {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: var(--green);
+            letter-spacing: 0.15em;
         }
 
-        @keyframes alert-pulse {
-            0%, 100% { background-color: rgba(239, 68, 68, 0); }
-            50% { background-color: rgba(239, 68, 68, 0.2); }
+        /* ─── Interaction Zone ─────────────────────── */
+        .interaction {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 22px 24px;
         }
 
-        .is-emergency {
-            animation: alert-pulse 0.8s infinite;
+        .q-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .q-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 0.02em;
+            color: var(--text);
+        }
+        .q-meta {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: var(--muted);
+            text-align: right;
+            line-height: 1.6;
+        }
+        .q-meta .diff-tag {
+            color: var(--green);
+            display: block;
         }
 
-        .btn-action {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Timer */
+        .timer-track {
+            height: 3px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+        .timer-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.1s linear, background 0.5s;
         }
 
-        .btn-action:hover:not(:disabled) {
-            transform: scale(1.02);
-            filter: brightness(1.2);
-            border-color: #10b981;
+        /* Options grid */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
 
-        .btn-action:active:not(:disabled) {
-            transform: scale(0.98);
+        .opt-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 14px 16px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+            letter-spacing: 0.02em;
+            position: relative;
+            overflow: hidden;
+        }
+        .opt-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,230,118,0.08), transparent);
+            transition: left 0.3s;
+        }
+        .opt-btn:hover:not(:disabled)::before { left: 100%; }
+        .opt-btn:hover:not(:disabled) {
+            border-color: rgba(0,230,118,0.4);
+            background: rgba(0,230,118,0.06);
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(0,230,118,0.1);
+        }
+        .opt-btn:active:not(:disabled) { transform: translateY(0); }
+        .opt-btn:disabled { opacity: 0.4; cursor: default; }
+
+        .opt-btn .opt-key {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 3px;
+            letter-spacing: 0.15em;
+        }
+
+        /* Feedback */
+        .feedback-zone {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .feedback-zone.show { display: flex; }
+
+        .feedback-top {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .res-icon {
+            width: 52px; height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: bold;
+        }
+        .res-icon.correct {
+            background: rgba(0,230,118,0.1);
+            border: 1px solid rgba(0,230,118,0.3);
+            color: var(--green);
+        }
+        .res-icon.wrong {
+            background: rgba(255,23,68,0.1);
+            border: 1px solid rgba(255,23,68,0.3);
+            color: var(--red);
+        }
+
+        .res-content { flex: 1; }
+        .res-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800;
+            font-size: 18px;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .res-title.correct { color: var(--green); }
+        .res-title.wrong { color: var(--red); }
+        .res-rhythm {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            color: var(--cyan);
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+        .res-body {
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        /* Tags */
+        .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+        .tag {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            padding: 2px 7px;
+            border-radius: 3px;
+            letter-spacing: 0.1em;
+        }
+        .tag.emergency { background: rgba(255,23,68,0.15); color: var(--red); border: 1px solid rgba(255,23,68,0.3); }
+        .tag.stable { background: rgba(0,230,118,0.1); color: var(--green); border: 1px solid rgba(0,230,118,0.25); }
+        .tag.rate { background: rgba(0,229,255,0.1); color: var(--cyan); border: 1px solid rgba(0,229,255,0.25); }
+
+        .feedback-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-retry {
+            padding: 10px 22px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-retry:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.3); }
+
+        .btn-next {
+            padding: 10px 28px;
+            background: var(--green);
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(0,230,118,0.25);
+        }
+        .btn-next:hover { background: #00ff87; transform: translateY(-1px); box-shadow: 0 4px 24px rgba(0,230,118,0.4); }
+
+        /* ─── Game Over ─────────────────────────────── */
+        .gameover {
+            text-align: center;
+            max-width: 480px;
+            width: 100%;
+        }
+        .gameover-icon { font-size: 64px; margin-bottom: 16px; }
+        .gameover-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-size: 64px;
+            letter-spacing: -1px;
+            line-height: 1;
+            color: #fff;
+        }
+        .gameover-sub {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.25em;
+            color: var(--red);
+            margin: 8px 0 32px;
+            text-transform: uppercase;
+        }
+        .gameover-score-box {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 28px;
+        }
+        .gameover-score-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.25em;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .gameover-score-num {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 64px;
+            color: var(--green);
+            text-shadow: 0 0 32px rgba(0,230,118,0.5);
+        }
+        .btn-restart {
+            width: 100%;
+            padding: 18px;
+            background: #fff;
+            border: none;
+            border-radius: 14px;
+            color: #000;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-size: 20px;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-restart:hover { background: var(--green); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,230,118,0.3); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        @media (max-width: 860px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar { grid-row: auto; flex-direction: row; flex-wrap: wrap; }
+            .sidebar .panel { flex: 1 1 160px; }
+            .options-grid { grid-template-columns: 1fr; }
+            .monitor-wrap { height: 240px; }
+            .hud-hr { font-size: 40px; }
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body>
 
-    <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
-        <!-- Sidebar Stats -->
-        <div class="lg:col-span-1 space-y-4">
-            <div class="stat-card rounded-2xl p-6">
-                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Total XP</h2>
-                <div id="score-val" class="text-4xl font-black text-emerald-400 font-mono">0000</div>
-                <div id="streak-badge" class="mt-2 inline-block px-2 py-1 bg-emerald-900/50 text-emerald-400 text-xs rounded border border-emerald-500/30 opacity-0 transition-opacity">
-                    STREAK x<span id="streak-val">1</span>
-                </div>
-            </div>
+<div class="app" id="app">
+    <!-- ─── SIDEBAR ─── -->
+    <div class="sidebar">
 
-            <div class="stat-card rounded-2xl p-6">
-                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Patient Stability</h2>
-                <div class="w-full h-4 bg-slate-800 rounded-full mt-2 overflow-hidden">
-                    <div id="health-bar" class="h-full bg-emerald-500 w-full transition-all duration-500"></div>
-                </div>
-                <p id="stability-text" class="text-[10px] mt-2 text-slate-400 text-center uppercase tracking-tighter">Hemodynamically Stable</p>
-            </div>
-
-            <div class="stat-card rounded-2xl p-6 hidden lg:block">
-                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">ICU Event Log</h2>
-                <div id="log-container" class="space-y-2 max-h-48 overflow-y-auto text-[11px] font-mono text-slate-400">
-                    <div>> Telemetry linked...</div>
-                    <div>> Monitoring Lead II...</div>
+        <div class="panel">
+            <div class="panel-label">Total XP</div>
+            <div class="score-num" id="score-val">0000</div>
+            <div class="streak-row">
+                <div class="streak-badge" id="streak-badge" style="opacity:0">
+                    STREAK ×<span id="streak-val">0</span>
                 </div>
             </div>
         </div>
 
-        <!-- Main Monitor -->
-        <div class="lg:col-span-3 space-y-6">
-            <div id="main-monitor" class="ekg-container rounded-3xl overflow-hidden aspect-video lg:aspect-auto lg:h-[420px]">
-                <div class="grid-bg"></div>
-                <div class="crt-overlay"></div>
-                
-                <!-- Monitor Header -->
-                <div class="absolute top-4 left-6 z-30 flex items-center gap-4">
-                    <div class="flex flex-col">
-                        <span class="text-emerald-500 font-mono text-sm font-bold">II</span>
-                        <span class="text-[10px] text-emerald-700">x1.0</span>
-                    </div>
-                    <div class="h-8 w-[1px] bg-emerald-900/50"></div>
-                    <div class="flex flex-col">
-                        <span class="text-white text-xs font-bold uppercase" id="patient-name">Patient: Bed 09</span>
-                        <span class="text-[10px] text-slate-500">Sweep: 25mm/s</span>
-                    </div>
-                </div>
+        <div class="panel">
+            <div class="panel-label">Difficulty</div>
+            <div class="diff-track">
+                <div class="diff-pip" id="d1"></div>
+                <div class="diff-pip" id="d2"></div>
+                <div class="diff-pip" id="d3"></div>
+                <div class="diff-pip" id="d4"></div>
+            </div>
+            <div class="diff-label" id="diff-label">INTERN</div>
+        </div>
 
-                <!-- Vital Signs Display -->
-                <div class="absolute top-4 right-6 z-30 text-right">
-                    <div class="flex items-baseline justify-end gap-1">
-                        <span class="text-6xl font-black text-emerald-400 font-mono leading-none" id="hr-val">--</span>
-                        <span class="text-emerald-600 text-xs font-bold">BPM</span>
-                    </div>
-                    <div class="flex gap-4 justify-end mt-2">
-                        <div class="text-cyan-400 font-mono"><span class="text-[10px] text-slate-500">SpO2</span> 97%</div>
-                        <div class="text-yellow-400 font-mono"><span class="text-[10px] text-slate-500">MAP</span> 88</div>
-                    </div>
-                </div>
+        <div class="panel">
+            <div class="panel-label">Patient Stability</div>
+            <div class="health-track">
+                <div class="health-fill" id="health-fill" style="width:100%"></div>
+            </div>
+            <div class="health-note" id="health-note">HEMODYNAMICALLY STABLE</div>
+        </div>
 
-                <canvas id="ekg-canvas"></canvas>
+        <div class="panel">
+            <div class="panel-label">Rhythm Progress</div>
+            <div class="progress-row">
+                <span id="progress-text">0 / 0 seen</span>
+            </div>
+            <div class="queue-bar" id="queue-bar"></div>
+        </div>
 
-                <div id="alert-banner" class="absolute inset-0 pointer-events-none flex items-center justify-center z-40 opacity-0 transition-opacity duration-300">
-                    <div class="bg-red-600 text-white px-10 py-5 text-3xl font-black italic uppercase tracking-tighter shadow-2xl">Lethal Arrhythmia</div>
+        <div class="panel">
+            <div class="panel-label">ICU Event Log</div>
+            <div class="log-list" id="log-list">
+                <div class="log-entry">▸ Telemetry online</div>
+                <div class="log-entry">▸ Lead II active</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ─── MAIN ─── -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <!-- Monitor -->
+        <div class="monitor-wrap" id="monitor-wrap">
+            <canvas id="ekg-canvas"></canvas>
+
+            <div class="monitor-hud-tl">
+                <div class="hud-lead">II</div>
+                <div class="hud-sub">25mm/s · ×1.0</div>
+            </div>
+
+            <div class="monitor-hud-tr">
+                <div class="hud-hr" id="hr-val">---</div>
+                <div class="hud-bpm">BPM</div>
+                <div class="hud-vitals">
+                    <div class="hud-vital" style="color:#00e5ff"><span>SpO2 </span>97%</div>
+                    <div class="hud-vital" style="color:#ffd740"><span>MAP </span>88</div>
+                    <div class="hud-vital" style="color:#e040fb"><span>TEMP </span>37.1</div>
                 </div>
             </div>
 
-            <!-- Interaction Zone -->
-            <div id="interaction-zone" class="stat-card rounded-3xl p-6 border-slate-700">
-                <div id="question-prompt" class="mb-6">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-lg font-bold text-slate-200">Interpret Rhythm:</h3>
-                        <span id="timer-text" class="text-xs font-mono text-cyan-400">Response Window</span>
-                    </div>
-                    <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                        <div id="timer-bar" class="h-full bg-cyan-500 w-full transition-all duration-100"></div>
+            <div class="monitor-hud-bl" id="bed-label">BED 09 · ICU TELEMETRY</div>
+            <div class="monitor-hud-br">
+                <div class="pulse-dot"></div>
+                <div class="live-text">LIVE</div>
+            </div>
+        </div>
+
+        <!-- Interaction -->
+        <div class="interaction">
+            <!-- Question header -->
+            <div id="question-zone">
+                <div class="q-header">
+                    <div class="q-title">Identify the Rhythm</div>
+                    <div class="q-meta">
+                        <span class="diff-tag" id="q-diff-tag">LEVEL 1</span>
+                        <span id="q-choices-note">4 OPTIONS</span>
                     </div>
                 </div>
-
-                <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Dynamic Buttons -->
+                <div class="timer-track">
+                    <div class="timer-fill" id="timer-fill" style="width:100%;background:var(--cyan)"></div>
                 </div>
+                <div class="options-grid" id="options-grid"></div>
+            </div>
 
-                <div id="feedback-zone" class="hidden flex flex-col items-stretch gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div class="flex items-start gap-5">
-                        <div id="res-icon" class="w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center text-3xl shadow-lg"></div>
-                        <div>
-                            <h4 id="res-title" class="font-bold text-xl"></h4>
-                            <p id="res-body" class="text-slate-400 text-sm max-w-2xl leading-relaxed mt-1"></p>
-                        </div>
+            <!-- Feedback -->
+            <div class="feedback-zone" id="feedback-zone">
+                <div class="feedback-top">
+                    <div class="res-icon" id="res-icon"></div>
+                    <div class="res-content">
+                        <div class="res-title" id="res-title"></div>
+                        <div class="res-rhythm" id="res-rhythm"></div>
+                        <div class="res-body" id="res-body"></div>
+                        <div class="tag-row" id="tag-row"></div>
                     </div>
-                    <div class="flex flex-col md:flex-row items-center gap-4 justify-end">
-                        <button id="retry-btn" class="hidden w-full md:w-auto px-8 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold uppercase tracking-wider transition-all">
-                            Try Again
-                        </button>
-                        <button id="next-btn" class="w-full md:w-auto px-10 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black uppercase tracking-wider transition-all shadow-xl shadow-emerald-900/40">
-                            Next Case
-                        </button>
-                    </div>
+                </div>
+                <div class="feedback-actions">
+                    <button class="btn-retry" id="retry-btn" style="display:none">↩ Try Again</button>
+                    <button class="btn-next" id="next-btn">Next Case →</button>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        const canvas = document.getElementById('ekg-canvas');
-        const ctx = canvas.getContext('2d');
-        const optionsGrid = document.getElementById('options-grid');
-        const feedbackZone = document.getElementById('feedback-zone');
-        const questionPrompt = document.getElementById('question-prompt');
-        const retryBtn = document.getElementById('retry-btn');
-        const nextBtn = document.getElementById('next-btn');
-        
-        let score = 0;
-        let streak = 0;
-        let health = 100;
-        let currentRhythm = null;
-        let timerInterval = null;
-        let timeRemaining = 100;
-        let currentChoices = [];
-        let hasFailedCurrent = false;
-
-        let scanX = 0;
-        const scanSpeed = 3;
-        const points = [];
-        let waveY = 0;
-
-        const RHYTHM_TYPES = {
-            NSR: {
-                name: "Normal Sinus Rhythm",
-                hr: () => 72,
-                emergency: false,
-                draw: (t) => {
-                    const cycle = t % 100;
-                    if (cycle < 10) return -Math.sin(cycle * 0.3) * 6; // P
-                    if (cycle >= 15 && cycle < 20) return -((cycle - 15) * 15); // Q
-                    if (cycle >= 20 && cycle < 25) return (cycle - 22.5) * 45; // R
-                    if (cycle >= 25 && cycle < 30) return 30 - (cycle - 25) * 8; // S
-                    if (cycle >= 50 && cycle < 70) return -Math.sin((cycle - 50) * 0.15) * 10; // T
-                    return 0;
-                },
-                info: "Standard 1:1 P-to-QRS ratio. PR interval is normal (0.12-0.20s)."
-            },
-            VTACH: {
-                name: "Ventricular Tachycardia",
-                hr: () => 170,
-                emergency: true,
-                draw: (t) => Math.sin(t * 0.3) * 50 + (Math.random() * 8),
-                info: "Wide, monomorphic complexes starting in the ventricles. Immediate assessment of pulse is required!"
-            },
-            VFIB: {
-                name: "Ventricular Fibrillation",
-                hr: () => 0,
-                emergency: true,
-                draw: (t) => (Math.random() - 0.5) * 60,
-                info: "Chaotic quivering of the ventricles. No pulse, no output. Defibrillation is mandatory."
-            },
-            AFIB: {
-                name: "Atrial Fibrillation",
-                hr: () => 124,
-                emergency: false,
-                draw: (t) => {
-                    const noise = (Math.random() - 0.5) * 8;
-                    const qrs = (t % (50 + Math.random() * 60) < 5) ? -70 : 0;
-                    return noise + (qrs === -70 ? (Math.random() > 0.5 ? -70 : 0) : 0);
-                },
-                info: "Irregularly irregular rhythm with no discernible P-waves. Baseline is fibrillatory."
-            },
-            AFLUTTER: {
-                name: "Atrial Flutter",
-                hr: () => 75,
-                emergency: false,
-                draw: (t) => {
-                    const saw = Math.abs((t % 20) - 10) * 2 - 10;
-                    const qrs = (t % 80 < 5) ? -80 : 0;
-                    return saw + qrs;
-                },
-                info: "Re-entrant circuit in the atria causing 'sawtooth' waves. Look for fixed conduction ratios."
-            },
-            TORSADES: {
-                name: "Torsades de Pointes",
-                hr: () => 210,
-                emergency: true,
-                draw: (t) => Math.sin(t * 0.4) * (Math.sin(t * 0.05) * 60),
-                info: "Polymorphic V-Tach where complexes 'twist' around the baseline. Often secondary to prolonged QT."
-            },
-            WENCKEBACH: {
-                name: "2nd Degree Type I (Wenckebach)",
-                hr: () => 52,
-                emergency: false,
-                draw: (t) => {
-                    const cycle = t % 400; 
-                    const beat = cycle % 100;
-                    let prShift = 0;
-                    if (cycle >= 100 && cycle < 200) prShift = 10;
-                    if (cycle >= 200 && cycle < 300) prShift = 25;
-                    if (cycle >= 300) { 
-                        if (beat < 10) return -6; 
-                        return 0;
-                    }
-                    if (beat < 10) return -6; 
-                    if (beat >= 15 + prShift && beat < 20 + prShift) return -70; 
-                    return 0;
-                },
-                info: "Successive lengthening of the PR interval until a QRS complex is dropped. Generally benign."
-            },
-            MOBITZ2: {
-                name: "2nd Degree Type II (Mobitz II)",
-                hr: () => 40,
-                emergency: true,
-                draw: (t) => {
-                    const cycle = t % 200; 
-                    const beat = cycle % 100;
-                    const drop = cycle >= 100;
-                    if (beat < 10) return -8; 
-                    if (!drop && beat >= 25 && beat < 30) return -80; 
-                    return 0;
-                },
-                info: "Constant PR intervals followed by unexpected dropped QRS complexes. High risk for 3rd Degree Block!"
-            },
-            ASYSTOLE: {
-                name: "Asystole",
-                hr: () => 0,
-                emergency: true,
-                draw: (t) => (Math.random() - 0.5) * 2,
-                info: "Total absence of ventricular electrical activity. Confirm in two leads and start CPR."
-            },
-            JUNCTIONAL: {
-                name: "Junctional Rhythm",
-                hr: () => 45,
-                emergency: false,
-                draw: (t) => {
-                    const beat = t % 130;
-                    if (beat > 10 && beat < 15) return -70; 
-                    if (beat > 30 && beat < 45) return -10; 
-                    return 0;
-                },
-                info: "AV node pacemaking (40-60 bpm). P-waves are either absent, inverted, or retrograde."
+<script>
+// ─────────────────────────────────────────────
+// RHYTHM LIBRARY
+// ─────────────────────────────────────────────
+const RHYTHMS = {
+    NSR: {
+        name: "Normal Sinus Rhythm",
+        hr: 72,
+        emergency: false,
+        difficulty: 1,
+        tags: ["STABLE", "60-100 BPM"],
+        info: "Regular rate 60-100 bpm. Upright P-wave before each QRS. Normal PR (0.12-0.20s) and QRS (<0.12s).",
+        draw(t) {
+            const c = t % 100;
+            if (c < 10) return -Math.sin(c * 0.31) * 6;
+            if (c >= 15 && c < 18) return -(c - 15) * 4;
+            if (c >= 18 && c < 22) return -12 + (c - 18) * 28;
+            if (c >= 22 && c < 26) return 100 - (c - 22) * 30;
+            if (c >= 26 && c < 30) return -(c - 26) * 2;
+            if (c >= 50 && c < 72) return -Math.sin((c - 50) * 0.143) * 12;
+            return 0;
+        }
+    },
+    SINUS_BRADY: {
+        name: "Sinus Bradycardia",
+        hr: 44,
+        emergency: false,
+        difficulty: 1,
+        tags: ["STABLE", "< 60 BPM"],
+        info: "Same morphology as NSR but rate < 60 bpm. May be normal in athletes; can be pathological with symptoms.",
+        draw(t) {
+            const c = t % 160;
+            if (c < 10) return -Math.sin(c * 0.31) * 6;
+            if (c >= 15 && c < 18) return -(c - 15) * 4;
+            if (c >= 18 && c < 22) return -12 + (c - 18) * 28;
+            if (c >= 22 && c < 26) return 100 - (c - 22) * 30;
+            if (c >= 26 && c < 30) return -(c - 26) * 2;
+            if (c >= 55 && c < 77) return -Math.sin((c - 55) * 0.143) * 12;
+            return 0;
+        }
+    },
+    SINUS_TACH: {
+        name: "Sinus Tachycardia",
+        hr: 118,
+        emergency: false,
+        difficulty: 1,
+        tags: ["STABLE", "> 100 BPM"],
+        info: "NSR morphology but rate > 100 bpm. P-waves may merge with preceding T-waves at faster rates. Always find the cause.",
+        draw(t) {
+            const c = t % 60;
+            if (c < 7) return -Math.sin(c * 0.45) * 5;
+            if (c >= 10 && c < 13) return -(c - 10) * 4;
+            if (c >= 13 && c < 17) return -12 + (c - 13) * 28;
+            if (c >= 17 && c < 21) return 100 - (c - 17) * 30;
+            if (c >= 21 && c < 24) return -(c - 21) * 2;
+            if (c >= 30 && c < 50) return -Math.sin((c - 30) * 0.157) * 10;
+            return 0;
+        }
+    },
+    AFIB: {
+        name: "Atrial Fibrillation",
+        hr: 118,
+        emergency: false,
+        difficulty: 2,
+        tags: ["STABLE", "IRREGULAR"],
+        info: "Irregularly irregular. No distinct P-waves — replaced by fibrillatory baseline. QRS is narrow unless aberrant conduction.",
+        draw(t) {
+            const fib = Math.sin(t * 1.7) * 3 + Math.sin(t * 2.3) * 2 + (Math.random() - 0.5) * 4;
+            const interval = 45 + Math.sin(t * 0.07) * 15 + Math.random() * 12;
+            const c = t % interval;
+            if (c < 5) return fib + (c < 3 ? -(c * 30) : (c < 5 ? 90 - c * 28 : 0));
+            return fib;
+        }
+    },
+    AFLUTTER: {
+        name: "Atrial Flutter",
+        hr: 75,
+        emergency: false,
+        difficulty: 2,
+        tags: ["STABLE", "SAWTOOTH"],
+        info: "Classic sawtooth flutter waves at ~300 bpm. QRS conduction typically 2:1, 3:1, or 4:1. Re-entrant circuit in right atrium.",
+        draw(t) {
+            const saw = ((t % 20) / 20) * 28 - 14;
+            const qrs_t = t % 80;
+            if (qrs_t > 5 && qrs_t < 11) {
+                const p = qrs_t - 5;
+                return saw + (p < 3 ? -p * 28 : 80 - p * 24);
             }
-        };
-
-        function resize() {
-            const parent = canvas.parentElement;
-            canvas.width = parent.clientWidth;
-            canvas.height = parent.clientHeight;
-            waveY = canvas.height / 2;
+            return saw;
         }
-
-        function drawLoop() {
-            ctx.clearRect(scanX, 0, 40, canvas.height); 
-            
-            ctx.strokeStyle = '#4ade80';
-            ctx.lineWidth = 3;
-            ctx.lineJoin = 'round';
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = '#4ade80';
-
-            ctx.beginPath();
-            const val = currentRhythm.draw(Date.now() / 10);
-            const targetY = waveY + val;
-            
-            if (scanX === 0) ctx.moveTo(0, targetY);
-            else ctx.moveTo(scanX - scanSpeed, points[points.length-1] || targetY);
-            
-            ctx.lineTo(scanX, targetY);
-            ctx.stroke();
-
-            points.push(targetY);
-            if (points.length > 100) points.shift();
-
-            scanX += scanSpeed;
-            if (scanX > canvas.width) {
-                scanX = 0;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+    },
+    VTACH: {
+        name: "Ventricular Tachycardia",
+        hr: 172,
+        emergency: true,
+        difficulty: 2,
+        tags: ["EMERGENCY", "> 100 BPM", "WIDE QRS"],
+        info: "Rapid wide-complex tachycardia (>0.12s) originating in the ventricles. Check pulse immediately — may degenerate to V-Fib.",
+        draw(t) {
+            const c = t % 36;
+            if (c < 3) return c * 20;
+            if (c < 12) return 60 - (c - 3) * 13;
+            if (c < 18) return -57 + (c - 12) * 9.5;
+            return 0 + Math.sin(t * 0.05) * 3;
+        }
+    },
+    VFIB: {
+        name: "Ventricular Fibrillation",
+        hr: 0,
+        emergency: true,
+        difficulty: 2,
+        tags: ["EMERGENCY", "NO PULSE", "DEFIB NOW"],
+        info: "Chaotic quivering — no organized contractions, no cardiac output. Immediate defibrillation required. Begin CPR.",
+        draw(t) {
+            return Math.sin(t * 0.9 + Math.random()) * 40 + Math.sin(t * 2.3) * 20 + (Math.random() - 0.5) * 30;
+        }
+    },
+    TORSADES: {
+        name: "Torsades de Pointes",
+        hr: 220,
+        emergency: true,
+        difficulty: 3,
+        tags: ["EMERGENCY", "POLYMORPHIC VT", "PROLONGED QT"],
+        info: "Polymorphic V-Tach where axis 'twists' around the baseline over 5-20 beats. Often from QT prolongation (drugs, electrolytes).",
+        draw(t) {
+            return Math.sin(t * 0.35) * (Math.sin(t * 0.04) * 65 + 10) + Math.random() * 5;
+        }
+    },
+    ASYSTOLE: {
+        name: "Asystole",
+        hr: 0,
+        emergency: true,
+        difficulty: 2,
+        tags: ["EMERGENCY", "NO PULSE", "CPR"],
+        info: "Flatline — absent ventricular electrical activity. Confirm in 2 leads. Initiate CPR and identify reversible causes (4 Hs & 4 Ts).",
+        draw(t) { return (Math.random() - 0.5) * 2; }
+    },
+    WENCKEBACH: {
+        name: "Mobitz I (Wenckebach)",
+        hr: 52,
+        emergency: false,
+        difficulty: 3,
+        tags: ["STABLE", "AVB 2°", "PR LENGTHENING"],
+        info: "Progressive PR prolongation until a QRS drops. Group beating pattern. Usually AV node level; benign in inferior MI.",
+        draw(t) {
+            const cycle = t % 360;
+            const beat = cycle % 90;
+            let prDelay = 0;
+            if (cycle >= 90 && cycle < 180) prDelay = 8;
+            else if (cycle >= 180 && cycle < 270) prDelay = 20;
+            else if (cycle >= 270) {
+                if (beat < 10) return -5;
+                return 0;
             }
-
-            requestAnimationFrame(drawLoop);
+            if (beat < 10) return -5;
+            const q = beat - 18 - prDelay;
+            if (q >= 0 && q < 2) return -q * 20;
+            if (q >= 2 && q < 5) return -40 + q * 46;
+            if (q >= 5 && q < 8) return 98 - (q - 5) * 36;
+            if (q >= 30 && q < 50) return -Math.sin((q - 30) * 0.157) * 10;
+            return 0;
         }
-
-        function loadPatient() {
-            feedbackZone.classList.add('hidden');
-            questionPrompt.classList.remove('hidden');
-            optionsGrid.classList.remove('hidden');
-            retryBtn.classList.add('hidden');
-            document.getElementById('main-monitor').classList.remove('is-emergency');
-            document.getElementById('alert-banner').classList.replace('opacity-100', 'opacity-0');
-            
-            const keys = Object.keys(RHYTHM_TYPES);
-            currentRhythm = RHYTHM_TYPES[keys[Math.floor(Math.random() * keys.length)]];
-            hasFailedCurrent = false;
-            
-            document.getElementById('hr-val').innerText = currentRhythm.hr() || "0";
-            
-            if(currentRhythm.emergency) {
-                document.getElementById('main-monitor').classList.add('is-emergency');
-                document.getElementById('alert-banner').classList.replace('opacity-0', 'opacity-100');
+    },
+    MOBITZ2: {
+        name: "Mobitz II (2° AVB)",
+        hr: 40,
+        emergency: true,
+        difficulty: 3,
+        tags: ["EMERGENCY", "CONSTANT PR", "DROPPED QRS"],
+        info: "Fixed PR intervals with sudden, unexpected dropped QRS complexes. Block is infranodal — high risk of complete heart block.",
+        draw(t) {
+            const cycle = t % 220;
+            const beat = cycle % 110;
+            const hasDrop = cycle >= 110;
+            if (beat < 10) return -6;
+            if (!hasDrop) {
+                const q = beat - 22;
+                if (q >= 0 && q < 2) return -q * 20;
+                if (q >= 2 && q < 5) return -40 + q * 46;
+                if (q >= 5 && q < 8) return 98 - (q - 5) * 36;
+                if (q >= 30 && q < 50) return -Math.sin((q - 30) * 0.157) * 10;
             }
-
-            // Generate choices once per patient
-            currentChoices = [currentRhythm.name];
-            while(currentChoices.length < 4) {
-                const randomName = RHYTHM_TYPES[keys[Math.floor(Math.random() * keys.length)]].name;
-                if(!currentChoices.includes(randomName)) currentChoices.push(randomName);
-            }
-            currentChoices.sort(() => Math.random() - 0.5);
-
-            renderOptions();
-            startTimer();
-            addLog(`Case Started: Monitoring Bed ${Math.floor(Math.random()*20 + 1)}`);
+            return 0;
         }
-
-        function renderOptions() {
-            optionsGrid.innerHTML = '';
-            currentChoices.forEach(c => {
-                const btn = document.createElement('button');
-                btn.className = "btn-action p-5 bg-slate-800/50 border border-slate-700 rounded-2xl text-left hover:bg-slate-700 font-bold text-sm tracking-tight";
-                btn.innerText = c;
-                btn.onclick = () => handleAnswer(c);
-                optionsGrid.appendChild(btn);
-            });
+    },
+    CHB: {
+        name: "Complete Heart Block (3° AVB)",
+        hr: 32,
+        emergency: true,
+        difficulty: 3,
+        tags: ["EMERGENCY", "AV DISSOCIATION", "ESCAPE RHYTHM"],
+        info: "Complete AV dissociation. Atria and ventricles beat independently. P-waves have no relation to QRS. Transcutaneous pacing urgently needed.",
+        draw(t) {
+            const p = t % 55;
+            const v = t % 200;
+            const pWave = p < 12 ? -Math.sin(p * 0.26) * 7 : 0;
+            let vComplex = 0;
+            const vb = v % 200;
+            if (vb >= 30 && vb < 32) vComplex = -(vb - 30) * 10;
+            else if (vb >= 32 && vb < 38) vComplex = -20 + (vb - 32) * 20;
+            else if (vb >= 38 && vb < 44) vComplex = 100 - (vb - 38) * 20;
+            else if (vb >= 44 && vb < 48) vComplex = -(vb - 44) * 5;
+            else if (vb >= 60 && vb < 85) vComplex = -Math.sin((vb - 60) * 0.126) * 14;
+            return pWave + vComplex;
         }
-
-        function startTimer() {
-            timeRemaining = 100;
-            const bar = document.getElementById('timer-bar');
-            if(timerInterval) clearInterval(timerInterval);
-            
-            timerInterval = setInterval(() => {
-                timeRemaining -= 0.8;
-                bar.style.width = timeRemaining + '%';
-                if(timeRemaining <= 0) handleAnswer(null);
-            }, 100);
+    },
+    JUNCTIONAL: {
+        name: "Junctional Rhythm",
+        hr: 48,
+        emergency: false,
+        difficulty: 3,
+        tags: ["STABLE", "40-60 BPM", "NO P-WAVE"],
+        info: "Escape rhythm from AV node at 40-60 bpm. Absent, inverted, or retrograde P-waves. Narrow QRS unless aberrant.",
+        draw(t) {
+            const c = t % 130;
+            if (c >= 12 && c < 14) return -(c - 12) * 22;
+            if (c >= 14 && c < 19) return -44 + (c - 14) * 28;
+            if (c >= 19 && c < 23) return 96 - (c - 19) * 26;
+            if (c >= 23 && c < 26) return -(c - 23) * 5;
+            if (c >= 35 && c < 58) return -Math.sin((c - 35) * 0.137) * 11;
+            return 0;
         }
-
-        function handleAnswer(choice) {
-            clearInterval(timerInterval);
-            questionPrompt.classList.add('hidden');
-            optionsGrid.classList.add('hidden');
-            feedbackZone.classList.remove('hidden');
-
-            const isCorrect = choice === currentRhythm.name;
-            const title = document.getElementById('res-title');
-            const body = document.getElementById('res-body');
-            const icon = document.getElementById('res-icon');
-
-            if(isCorrect) {
-                // Scoring logic only applies if they haven't failed this specific rhythm yet
-                if (!hasFailedCurrent) {
-                    streak++;
-                    const speedBonus = Math.floor(timeRemaining / 2);
-                    const pointsGained = (100 + speedBonus) * streak;
-                    score += pointsGained;
-                    addLog(`Success: Rhythm matched. Streak x${streak}`);
-                } else {
-                    addLog(`Resolved: Rhythm identified correctly after review.`);
-                }
-                
-                title.innerText = "Accurate Interpretation";
-                title.className = "font-bold text-xl text-emerald-400";
-                icon.innerHTML = "✓";
-                icon.className = "w-16 h-16 rounded-2xl flex items-center justify-center text-3xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-                body.innerText = `${currentRhythm.info}`;
-                
-                retryBtn.classList.add('hidden');
+    },
+    SVT: {
+        name: "Supraventricular Tachycardia",
+        hr: 188,
+        emergency: false,
+        difficulty: 2,
+        tags: ["URGENT", "> 150 BPM", "NARROW QRS"],
+        info: "Abrupt-onset narrow complex tachycardia >150 bpm. No visible P-waves (hidden in QRS/T). Vagal maneuvers or adenosine first-line.",
+        draw(t) {
+            const c = t % 32;
+            if (c >= 8 && c < 10) return -(c - 8) * 25;
+            if (c >= 10 && c < 14) return -50 + (c - 10) * 37;
+            if (c >= 14 && c < 18) return 98 - (c - 14) * 28;
+            if (c >= 18 && c < 20) return -(c - 18) * 4;
+            if (c >= 20 && c < 28) return -Math.sin((c - 20) * 0.393) * 8;
+            return 0;
+        }
+    },
+    PVC: {
+        name: "PVCs (Bigeminy)",
+        hr: 68,
+        emergency: false,
+        difficulty: 2,
+        tags: ["STABLE", "WIDE ECTOPIC", "COMPENSATORY PAUSE"],
+        info: "Alternating normal sinus beats and premature wide QRS complexes from ventricular focus. Evaluate for underlying ischemia or electrolyte imbalance.",
+        draw(t) {
+            const cycle = t % 200;
+            const beat = cycle % 100;
+            const isPVC = cycle >= 100;
+            if (!isPVC) {
+                if (beat < 10) return -Math.sin(beat * 0.31) * 5;
+                const q = beat - 18;
+                if (q >= 0 && q < 2) return -q * 18;
+                if (q >= 2 && q < 5) return -36 + q * 38;
+                if (q >= 5 && q < 8) return 90 - (q - 5) * 32;
+                if (q >= 8 && q < 10) return -(q - 8) * 4;
+                if (q >= 22 && q < 42) return -Math.sin((q - 22) * 0.157) * 10;
+                return 0;
             } else {
-                // If it was the first failure, deduct health
-                if (!hasFailedCurrent) {
-                    streak = 0;
-                    health -= 25;
-                    updateHealth();
-                    hasFailedCurrent = true;
-                    addLog(`Error: Patient at risk due to misinterpretation.`);
-                }
-                
-                title.innerText = choice === null ? "Critical Delay" : "Clinical Oversight";
-                title.className = "font-bold text-xl text-red-500";
-                icon.innerHTML = "!";
-                icon.className = "w-16 h-16 rounded-2xl flex items-center justify-center text-3xl bg-red-500/20 text-red-500 border border-red-500/30";
-                body.innerText = `The observed rhythm is actually ${currentRhythm.name}. \n\nLearning Point: ${currentRhythm.info}`;
-                
-                retryBtn.classList.remove('hidden');
-            }
-
-            document.getElementById('score-val').innerText = score.toString().padStart(4, '0');
-            document.getElementById('streak-val').innerText = streak;
-            document.getElementById('streak-badge').style.opacity = streak > 1 ? "1" : "0";
-
-            if(health <= 0) triggerGameOver();
-        }
-
-        function retryRound() {
-            feedbackZone.classList.add('hidden');
-            questionPrompt.classList.remove('hidden');
-            optionsGrid.classList.remove('hidden');
-            startTimer(); // Restart timer for the second attempt
-        }
-
-        function updateHealth() {
-            const bar = document.getElementById('health-bar');
-            const text = document.getElementById('stability-text');
-            bar.style.width = health + '%';
-            
-            if(health < 40) {
-                bar.className = "h-full bg-red-500 w-full transition-all duration-500";
-                text.innerText = "Critical Instability";
-                text.classList.add('text-red-500', 'font-bold');
-            } else if (health < 75) {
-                bar.className = "h-full bg-yellow-500 w-full transition-all duration-500";
-                text.innerText = "Hemodynamics Compensating";
+                if (beat >= 15 && beat < 19) return -(beat - 15) * 6;
+                if (beat >= 19 && beat < 26) return -24 + (beat - 19) * 18;
+                if (beat >= 26 && beat < 38) return 102 - (beat - 26) * 12;
+                if (beat >= 38 && beat < 50) return -42 + (beat - 38) * 4;
+                if (beat >= 55 && beat < 80) return -Math.sin((beat - 55) * 0.126) * 18;
+                return 0;
             }
         }
+    },
+    IDIOVENTRICULAR: {
+        name: "Accelerated Idioventricular Rhythm",
+        hr: 72,
+        emergency: false,
+        difficulty: 3,
+        tags: ["STABLE", "WIDE QRS", "60-100 BPM"],
+        info: "Wide complex escape rhythm 60-100 bpm originating in ventricles. Often seen post-reperfusion. Usually benign — rarely requires treatment.",
+        draw(t) {
+            const c = t % 105;
+            if (c >= 10 && c < 13) return -(c - 10) * 8;
+            if (c >= 13 && c < 22) return -24 + (c - 13) * 13;
+            if (c >= 22 && c < 35) return 93 - (c - 22) * 10;
+            if (c >= 35 && c < 50) return -37 + (c - 35) * 2.5;
+            if (c >= 55 && c < 82) return -Math.sin((c - 55) * 0.12) * 16;
+            return 0;
+        }
+    },
+    PACED: {
+        name: "Paced Rhythm (Ventricular)",
+        hr: 70,
+        emergency: false,
+        difficulty: 3,
+        tags: ["STABLE", "PACEMAKER", "WIDE QRS"],
+        info: "Pacemaker spikes followed by wide, LBBB-morphology QRS complexes. Verify appropriate sensing and capture thresholds.",
+        draw(t) {
+            const c = t % 106;
+            if (c === 0) return -90;
+            if (c < 2) return 90;
+            if (c >= 2 && c < 5) return 90 - (c - 2) * 4;
+            if (c >= 5 && c < 10) return 78 - (c - 5) * 25;
+            if (c >= 10 && c < 20) return -47 + (c - 10) * 5.5;
+            if (c >= 20 && c < 42) return 8 - Math.sin((c - 20) * 0.143) * 18;
+            return 0;
+        }
+    },
+    LBBB: {
+        name: "Left Bundle Branch Block",
+        hr: 76,
+        emergency: false,
+        difficulty: 4,
+        tags: ["STABLE", "WIDE QRS", "QRS > 0.12s"],
+        info: "Wide QRS (>0.12s) with broad, notched R in lateral leads (I, aVL, V5-V6). New LBBB with chest pain = treat as STEMI equivalent.",
+        draw(t) {
+            const c = t % 100;
+            if (c < 10) return -Math.sin(c * 0.31) * 5;
+            const q = c - 17;
+            if (q >= 0 && q < 3) return -(q) * 10;
+            if (q >= 3 && q < 8) return -30 + q * 18;
+            if (q >= 8 && q < 12) return 84 - (q - 8) * 10;
+            if (q >= 12 && q < 18) return 44 - (q - 12) * 2;
+            if (q >= 18 && q < 22) return 32 + (q - 18) * 15;
+            if (q >= 22 && q < 26) return 92 - (q - 22) * 22;
+            if (q >= 26 && q < 30) return 4 - (q - 26) * 3;
+            if (q >= 40 && q < 65) return -Math.sin((q - 40) * 0.126) * 14;
+            return 0;
+        }
+    },
+    RBBB: {
+        name: "Right Bundle Branch Block",
+        hr: 78,
+        emergency: false,
+        difficulty: 4,
+        tags: ["STABLE", "WIDE QRS", "RSR' PATTERN"],
+        info: "Wide QRS (>0.12s) with classic 'M-shaped' RSR' pattern in V1-V2. Broad, slurred S in lateral leads. May be normal variant.",
+        draw(t) {
+            const c = t % 100;
+            if (c < 10) return -Math.sin(c * 0.31) * 5;
+            const q = c - 17;
+            if (q >= 0 && q < 2) return -q * 18;
+            if (q >= 2 && q < 6) return -36 + q * 30;
+            if (q >= 6 && q < 10) return 84 - (q - 6) * 28;
+            if (q >= 10 && q < 14) return -28 + (q - 10) * 20;
+            if (q >= 14 && q < 18) return 52 - (q - 14) * 22;
+            if (q >= 18 && q < 22) return -36 + (q - 18) * 9;
+            if (q >= 22 && q < 28) return 0;
+            if (q >= 30 && q < 52) return -Math.sin((q - 30) * 0.143) * 13;
+            return 0;
+        }
+    }
+};
 
-        function addLog(msg) {
-            const container = document.getElementById('log-container');
-            const div = document.createElement('div');
-            div.innerText = `> ${msg}`;
-            container.prepend(div);
+// ─────────────────────────────────────────────
+// DIFFICULTY SYSTEM
+// ─────────────────────────────────────────────
+const DIFFICULTY_LEVELS = [
+    { level: 1, label: "INTERN",   minCorrect: 0,  timeMs: 18000, choices: 4, pool: [1,2] },
+    { level: 2, label: "RESIDENT", minCorrect: 4,  timeMs: 13000, choices: 4, pool: [1,2,3] },
+    { level: 3, label: "FELLOW",   minCorrect: 9,  timeMs: 9000,  choices: 5, pool: [1,2,3,4] },
+    { level: 4, label: "ATTENDING",minCorrect: 15, timeMs: 6000,  choices: 6, pool: [1,2,3,4] },
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let score = 0, streak = 0, health = 100, correctCount = 0;
+let currentRhythm = null, currentChoices = [];
+let timerInterval = null, timeRemaining = 1;
+let hasFailedCurrent = false;
+
+// No-repeat queue
+const rhythmKeys = Object.keys(RHYTHMS);
+let rhythmQueue = [], seenCount = 0;
+
+// Canvas
+const canvas = document.getElementById('ekg-canvas');
+const ctx = canvas.getContext('2d');
+let scanX = 0, waveY = 0;
+const SCAN_SPEED = 2.8;
+let prevY = null;
+let animId = null;
+
+// ─────────────────────────────────────────────
+// QUEUE
+// ─────────────────────────────────────────────
+function buildQueue(diffLevel) {
+    const pool = DIFFICULTY_LEVELS[diffLevel - 1].pool;
+    const eligible = rhythmKeys.filter(k => pool.includes(RHYTHMS[k].difficulty));
+    // Fisher-Yates shuffle
+    const arr = [...eligible];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function getDiffLevel() {
+    for (let i = DIFFICULTY_LEVELS.length - 1; i >= 0; i--) {
+        if (correctCount >= DIFFICULTY_LEVELS[i].minCorrect) return i;
+    }
+    return 0;
+}
+
+function nextFromQueue() {
+    const di = getDiffLevel();
+    const pool = DIFFICULTY_LEVELS[di].pool;
+    const eligible = rhythmKeys.filter(k => pool.includes(RHYTHMS[k].difficulty));
+
+    // Filter queue to eligible rhythms only
+    while (rhythmQueue.length === 0 || !eligible.includes(rhythmQueue[0])) {
+        // Rebuild queue if empty or stale
+        rhythmQueue = buildQueue(di + 1);
+    }
+    return rhythmQueue.shift();
+}
+
+// ─────────────────────────────────────────────
+// RENDER PROGRESS DOTS
+// ─────────────────────────────────────────────
+function renderQueueDots() {
+    const total = rhythmKeys.length;
+    const bar = document.getElementById('queue-bar');
+    bar.innerHTML = '';
+    document.getElementById('progress-text').innerText = `${seenCount} / ${total} seen`;
+    const seenKeys = new Set(rhythmKeys.slice(0, seenCount));
+    rhythmKeys.forEach((k, i) => {
+        const d = document.createElement('div');
+        d.className = 'queue-dot' + (k === currentRhythm?.__key ? ' current' : i < seenCount ? ' done' : '');
+        bar.appendChild(d);
+    });
+}
+
+// ─────────────────────────────────────────────
+// DIFFICULTY UI
+// ─────────────────────────────────────────────
+const diffColors = ['var(--green)', '#ccff00', '#ff9100', 'var(--red)'];
+const diffClasses = ['', 'l2', 'l3', 'l4'];
+
+function updateDifficultyUI() {
+    const di = getDiffLevel();
+    const d = DIFFICULTY_LEVELS[di];
+    document.getElementById('diff-label').innerText = d.label;
+    document.getElementById('diff-label').style.color = diffColors[di];
+    document.getElementById('q-diff-tag').innerText = `LEVEL ${di + 1} · ${d.label}`;
+    document.getElementById('q-diff-tag').style.color = diffColors[di];
+    document.getElementById('q-choices-note').innerText = `${d.choices} OPTIONS`;
+
+    for (let i = 1; i <= 4; i++) {
+        const pip = document.getElementById('d' + i);
+        pip.className = 'diff-pip' + (i <= di + 1 ? ` active ${diffClasses[di]}` : '');
+    }
+}
+
+// ─────────────────────────────────────────────
+// CANVAS
+// ─────────────────────────────────────────────
+function resizeCanvas() {
+    const wrap = document.getElementById('monitor-wrap');
+    canvas.width = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+    waveY = canvas.height / 2 + 10;
+    scanX = 0; prevY = null;
+}
+
+function drawLoop() {
+    // Erase ahead of scan (sweeper)
+    ctx.clearRect(scanX, 0, 50, canvas.height);
+
+    // Draw line segment
+    if (prevY !== null && scanX > 0) {
+        const val = currentRhythm ? currentRhythm.draw(Date.now() / 9) : 0;
+        const targetY = waveY + val;
+
+        ctx.beginPath();
+        ctx.moveTo(scanX - SCAN_SPEED, prevY);
+        ctx.lineTo(scanX, targetY);
+        ctx.strokeStyle = '#00e676';
+        ctx.lineWidth = 2.2;
+        ctx.lineJoin = 'round';
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = '#00e676';
+        ctx.stroke();
+
+        prevY = targetY;
+    } else {
+        const val = currentRhythm ? currentRhythm.draw(Date.now() / 9) : 0;
+        prevY = waveY + val;
+    }
+
+    scanX += SCAN_SPEED;
+    if (scanX >= canvas.width) {
+        scanX = 0;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        prevY = null;
+    }
+
+    animId = requestAnimationFrame(drawLoop);
+}
+
+// ─────────────────────────────────────────────
+// LOAD PATIENT
+// ─────────────────────────────────────────────
+function loadPatient() {
+    // Reset UI
+    document.getElementById('feedback-zone').classList.remove('show');
+    document.getElementById('question-zone').style.display = '';
+    document.getElementById('retry-btn').style.display = 'none';
+    hasFailedCurrent = false;
+
+    // Pick rhythm
+    const key = nextFromQueue();
+    currentRhythm = { ...RHYTHMS[key], __key: key };
+    seenCount++;
+
+    updateDifficultyUI();
+
+    // HR
+    document.getElementById('hr-val').innerText = currentRhythm.hr || '---';
+
+    // Bed label
+    document.getElementById('bed-label').innerText =
+        `BED ${String(Math.floor(Math.random() * 20 + 1)).padStart(2,'0')} · ICU TELEMETRY`;
+
+    // Generate choices
+    const di = getDiffLevel();
+    const numChoices = DIFFICULTY_LEVELS[di].choices;
+    currentChoices = [currentRhythm.name];
+
+    // Add distractors — at higher levels, pick rhythms with same difficulty
+    const allNames = rhythmKeys.map(k => RHYTHMS[k].name);
+    let candidates = allNames.filter(n => n !== currentRhythm.name);
+
+    // At harder levels, bias towards same-difficulty distractors
+    if (di >= 2) {
+        const sameDiff = rhythmKeys
+            .filter(k => RHYTHMS[k].difficulty === currentRhythm.difficulty && RHYTHMS[k].name !== currentRhythm.name)
+            .map(k => RHYTHMS[k].name);
+        if (sameDiff.length >= 2) {
+            const shuffled = sameDiff.sort(() => Math.random() - 0.5);
+            currentChoices.push(...shuffled.slice(0, 2));
+            candidates = candidates.filter(n => !currentChoices.includes(n));
+        }
+    }
+
+    while (currentChoices.length < numChoices && candidates.length > 0) {
+        const idx = Math.floor(Math.random() * candidates.length);
+        currentChoices.push(candidates[idx]);
+        candidates.splice(idx, 1);
+    }
+
+    currentChoices.sort(() => Math.random() - 0.5);
+    renderOptions();
+    startTimer();
+    renderQueueDots();
+    addLog(`▸ New case: Bed ${String(Math.floor(Math.random()*20+1)).padStart(2,'0')} · ${DIFFICULTY_LEVELS[di].label}`, 'new');
+}
+
+// ─────────────────────────────────────────────
+// OPTIONS
+// ─────────────────────────────────────────────
+const hotkeys = ['A','B','C','D','E','F'];
+
+function renderOptions() {
+    const grid = document.getElementById('options-grid');
+    grid.innerHTML = '';
+    currentChoices.forEach((c, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.innerHTML = `<span class="opt-key">${hotkeys[i]}</span>${c}`;
+        btn.onclick = () => handleAnswer(c);
+        grid.appendChild(btn);
+    });
+}
+
+// ─────────────────────────────────────────────
+// TIMER
+// ─────────────────────────────────────────────
+function startTimer() {
+    const di = getDiffLevel();
+    const totalMs = DIFFICULTY_LEVELS[di].timeMs;
+    timeRemaining = 1;
+    const fill = document.getElementById('timer-fill');
+    fill.style.transition = 'none';
+    fill.style.width = '100%';
+    if (timerInterval) clearInterval(timerInterval);
+
+    const step = 50;
+    const decrement = step / totalMs;
+
+    timerInterval = setInterval(() => {
+        timeRemaining -= decrement;
+        const pct = Math.max(0, timeRemaining * 100);
+        fill.style.transition = `width ${step}ms linear`;
+        fill.style.width = pct + '%';
+
+        // Color shift
+        if (pct < 25) {
+            fill.style.background = 'var(--red)';
+        } else if (pct < 50) {
+            fill.style.background = 'var(--yellow)';
+        } else {
+            fill.style.background = 'var(--cyan)';
         }
 
-        function triggerGameOver() {
-            document.body.innerHTML = `
-                <div class="text-center p-12 bg-slate-900 rounded-[3rem] border-4 border-red-600 shadow-2xl max-w-lg w-full">
-                    <div class="text-7xl mb-6">🏥</div>
-                    <h1 class="text-5xl font-black text-white mb-2 tracking-tighter italic">UNIT CRASH</h1>
-                    <p class="text-red-500 font-bold uppercase tracking-widest mb-10 text-sm">Patient Safety Compromised</p>
-                    <div class="bg-black/50 p-8 rounded-3xl mb-10 border border-white/5">
-                        <div class="text-slate-500 uppercase text-xs font-bold mb-1">Final XP Accumulation</div>
-                        <div class="text-6xl font-black text-emerald-400 font-mono">${score}</div>
-                    </div>
-                    <button onclick="location.reload()" class="w-full py-5 bg-white text-black rounded-2xl font-black text-xl hover:bg-emerald-400 transition-all shadow-xl">START NEW SHIFT</button>
+        if (timeRemaining <= 0) handleAnswer(null);
+    }, step);
+}
+
+// ─────────────────────────────────────────────
+// ANSWER
+// ─────────────────────────────────────────────
+function handleAnswer(choice) {
+    clearInterval(timerInterval);
+    document.getElementById('question-zone').style.display = 'none';
+    const fz = document.getElementById('feedback-zone');
+    fz.classList.add('show');
+
+    const isCorrect = choice === currentRhythm.name;
+
+    const icon = document.getElementById('res-icon');
+    const title = document.getElementById('res-title');
+    const rhythmLabel = document.getElementById('res-rhythm');
+    const body = document.getElementById('res-body');
+    const tagRow = document.getElementById('tag-row');
+
+    rhythmLabel.innerText = `▸ ${currentRhythm.name}`;
+    body.innerText = currentRhythm.info;
+
+    // Tags
+    tagRow.innerHTML = '';
+    currentRhythm.tags.forEach(t => {
+        const span = document.createElement('span');
+        span.className = 'tag ' + (t === 'EMERGENCY' ? 'emergency' : t === 'STABLE' ? 'stable' : 'rate');
+        span.innerText = t;
+        tagRow.appendChild(span);
+    });
+
+    if (isCorrect) {
+        if (!hasFailedCurrent) {
+            streak++;
+            const di = getDiffLevel();
+            const speedBonus = Math.floor(timeRemaining * 80);
+            const diffBonus = di + 1;
+            const pts = (100 + speedBonus) * streak * diffBonus;
+            score += pts;
+            correctCount++;
+            addLog(`▸ Correct — ${currentRhythm.name} [+${pts} XP]`, 'new');
+        } else {
+            addLog(`▸ Identified on retry — ${currentRhythm.name}`, 'new');
+        }
+        icon.className = 'res-icon correct';
+        icon.innerText = '✓';
+        title.className = 'res-title correct';
+        title.innerText = 'Accurate Interpretation';
+        document.getElementById('retry-btn').style.display = 'none';
+    } else {
+        if (!hasFailedCurrent) {
+            streak = 0;
+            health -= 25;
+            hasFailedCurrent = true;
+            updateHealth();
+            addLog(`▸ Error — Misidentified rhythm. Patient at risk.`, 'err');
+        }
+        icon.className = 'res-icon wrong';
+        icon.innerText = '!';
+        title.className = 'res-title wrong';
+        title.innerText = choice === null ? 'Critical Delay' : 'Clinical Oversight';
+        body.innerText = `The correct rhythm is "${currentRhythm.name}". ${currentRhythm.info}`;
+        document.getElementById('retry-btn').style.display = '';
+    }
+
+    document.getElementById('score-val').innerText = String(score).padStart(4, '0');
+    document.getElementById('streak-val').innerText = streak;
+    document.getElementById('streak-badge').style.opacity = streak > 1 ? '1' : '0';
+
+    if (health <= 0) { setTimeout(triggerGameOver, 600); return; }
+    updateDifficultyUI();
+}
+
+function retryRound() {
+    document.getElementById('feedback-zone').classList.remove('show');
+    document.getElementById('question-zone').style.display = '';
+    document.getElementById('retry-btn').style.display = 'none';
+    renderOptions();
+    startTimer();
+}
+
+// ─────────────────────────────────────────────
+// HEALTH
+// ─────────────────────────────────────────────
+function updateHealth() {
+    const fill = document.getElementById('health-fill');
+    const note = document.getElementById('health-note');
+    fill.style.width = health + '%';
+    if (health <= 25) {
+        fill.style.background = 'var(--red)';
+        fill.style.boxShadow = '0 0 10px rgba(255,23,68,0.5)';
+        note.innerText = 'CRITICAL INSTABILITY';
+        note.style.color = 'var(--red)';
+    } else if (health <= 50) {
+        fill.style.background = 'var(--yellow)';
+        fill.style.boxShadow = '0 0 10px rgba(255,215,64,0.4)';
+        note.innerText = 'COMPENSATING';
+        note.style.color = 'var(--yellow)';
+    } else {
+        fill.style.background = 'var(--green)';
+        fill.style.boxShadow = '0 0 10px rgba(0,230,118,0.4)';
+    }
+}
+
+// ─────────────────────────────────────────────
+// LOG
+// ─────────────────────────────────────────────
+function addLog(msg, type = '') {
+    const list = document.getElementById('log-list');
+    const div = document.createElement('div');
+    div.className = `log-entry ${type}`;
+    div.innerText = msg;
+    list.prepend(div);
+    // Keep log short
+    while (list.children.length > 14) list.removeChild(list.lastChild);
+}
+
+// ─────────────────────────────────────────────
+// GAME OVER
+// ─────────────────────────────────────────────
+function triggerGameOver() {
+    cancelAnimationFrame(animId);
+    clearInterval(timerInterval);
+
+    document.getElementById('app').innerHTML = `
+        <div style="grid-column:1/-1;display:flex;justify-content:center;">
+        <div class="gameover">
+            <div class="gameover-icon">🏥</div>
+            <div class="gameover-title">UNIT CRASH</div>
+            <div class="gameover-sub">Patient Safety Compromised</div>
+            <div class="gameover-score-box">
+                <div class="gameover-score-label">Final XP Accumulation</div>
+                <div class="gameover-score-num">${String(score).padStart(4,'0')}</div>
+                <div style="margin-top:16px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)">
+                    Rhythms Identified: ${correctCount} &nbsp;·&nbsp; Max Streak: ${streak}
                 </div>
-            `;
-        }
+            </div>
+            <button class="btn-restart" onclick="location.reload()">START NEW SHIFT</button>
+        </div>
+        </div>
+    `;
+}
 
-        nextBtn.onclick = loadPatient;
-        retryBtn.onclick = retryRound;
-        window.addEventListener('resize', resize);
-        
-        window.onload = () => {
-            resize();
-            loadPatient();
-            drawLoop();
-        };
-    </script>
+// ─────────────────────────────────────────────
+// KEYBOARD HOTKEYS
+// ─────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    const k = e.key.toUpperCase();
+    const idx = hotkeys.indexOf(k);
+    if (idx !== -1 && currentChoices[idx] && document.getElementById('question-zone').style.display !== 'none') {
+        handleAnswer(currentChoices[idx]);
+    }
+});
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+document.getElementById('next-btn').onclick = loadPatient;
+document.getElementById('retry-btn').onclick = retryRound;
+window.addEventListener('resize', resizeCanvas);
+
+window.onload = () => {
+    resizeCanvas();
+    // Pre-build initial queue
+    rhythmQueue = buildQueue(1);
+    loadPatient();
+    drawLoop();
+};
+</script>
 </body>
 </html>
