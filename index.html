@@ -22,9 +22,7 @@
             --text:     #e2e8f0;
             --muted:    #475569;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
             background: var(--bg);
             background-image:
@@ -38,7 +36,6 @@
             padding: 16px;
             overflow-x: hidden;
         }
-
         /* ─── Layout ─────────────────────────────── */
         .app {
             width: 100%;
@@ -48,7 +45,6 @@
             grid-template-rows: auto auto;
             gap: 14px;
         }
-
         /* ─── Sidebar ─────────────────────────────── */
         .sidebar {
             grid-row: 1 / 3;
@@ -56,14 +52,12 @@
             flex-direction: column;
             gap: 12px;
         }
-
         .panel {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 20px;
         }
-
         .panel-label {
             font-family: 'Share Tech Mono', monospace;
             font-size: 9px;
@@ -72,7 +66,6 @@
             text-transform: uppercase;
             margin-bottom: 10px;
         }
-
         /* Score */
         .score-num {
             font-family: 'Share Tech Mono', monospace;
@@ -82,7 +75,6 @@
             text-shadow: 0 0 24px rgba(0,230,118,0.4);
             letter-spacing: -1px;
         }
-
         .streak-row {
             display: flex;
             align-items: center;
@@ -90,7 +82,6 @@
             margin-top: 10px;
             min-height: 22px;
         }
-
         .streak-badge {
             font-family: 'Share Tech Mono', monospace;
             font-size: 10px;
@@ -101,7 +92,6 @@
             color: var(--green);
             transition: opacity 0.3s;
         }
-
         /* Difficulty */
         .diff-track {
             display: flex;
@@ -119,7 +109,6 @@
         .diff-pip.active.l2 { background: var(--yellow); box-shadow: 0 0 8px rgba(255,215,64,0.5); }
         .diff-pip.active.l3 { background: #ff9100; box-shadow: 0 0 8px rgba(255,145,0,0.5); }
         .diff-pip.active.l4 { background: var(--red); box-shadow: 0 0 8px rgba(255,23,68,0.5); }
-
         .diff-label {
             font-family: 'Share Tech Mono', monospace;
             font-size: 12px;
@@ -127,7 +116,6 @@
             margin-top: 6px;
             transition: color 0.4s;
         }
-
         /* Health */
         .health-track {
             height: 8px;
@@ -149,7 +137,6 @@
             margin-top: 6px;
             font-family: 'Share Tech Mono', monospace;
         }
-
         /* Log */
         .log-list {
             font-family: 'Share Tech Mono', monospace;
@@ -164,7 +151,6 @@
         .log-list .log-entry { opacity: 0.7; }
         .log-list .log-entry.new { color: var(--green); opacity: 1; }
         .log-list .log-entry.err { color: var(--red); opacity: 1; }
-
         /* Progress bar */
         .progress-row {
             display: flex;
@@ -188,7 +174,6 @@
         }
         .queue-dot.done { background: var(--green-dim); }
         .queue-dot.current { background: var(--green); box-shadow: 0 0 6px var(--green); }
-
         /* ─── Monitor ──────────────────────────────── */
         .monitor-wrap {
             background: #010408;
@@ -198,7 +183,6 @@
             position: relative;
             height: 340px;
         }
-
         /* subtle grid */
         .monitor-wrap::before {
             content: '';
@@ -211,7 +195,6 @@
             pointer-events: none;
             z-index: 1;
         }
-
         /* scanline CRT overlay */
         .monitor-wrap::after {
             content: '';
@@ -227,13 +210,11 @@
             pointer-events: none;
             z-index: 3;
         }
-
         #ekg-canvas {
             position: absolute;
             inset: 0;
             z-index: 2;
         }
-
         /* Monitor HUD */
         .monitor-hud-tl {
             position: absolute;
@@ -252,7 +233,6 @@
             font-family: 'Share Tech Mono', monospace;
             margin-top: 1px;
         }
-
         .monitor-hud-tr {
             position: absolute;
             top: 10px; right: 16px;
@@ -283,7 +263,6 @@
             font-size: 11px;
         }
         .hud-vital span { font-size: 9px; color: var(--muted); }
-
         .monitor-hud-bl {
             position: absolute;
             bottom: 12px; left: 18px;
@@ -292,7 +271,6 @@
             font-size: 9px;
             color: rgba(0,230,118,0.3);
         }
-
         .monitor-hud-br {
             position: absolute;
             bottom: 12px; right: 18px;
@@ -318,7 +296,6 @@
             color: var(--green);
             letter-spacing: 0.15em;
         }
-
         /* ─── Interaction Zone ─────────────────────── */
         .interaction {
             background: var(--surface);
@@ -326,12 +303,11 @@
             border-radius: 20px;
             padding: 22px 24px;
         }
-
         .q-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 14px;
+            margin-bottom: 18px;
         }
         .q-title {
             font-family: 'Barlow Condensed', sans-serif;
@@ -351,28 +327,12 @@
             color: var(--green);
             display: block;
         }
-
-        /* Timer */
-        .timer-track {
-            height: 3px;
-            background: rgba(255,255,255,0.06);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-bottom: 18px;
-        }
-        .timer-fill {
-            height: 100%;
-            border-radius: 2px;
-            transition: width 0.1s linear, background 0.5s;
-        }
-
         /* Options grid */
         .options-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
-
         .opt-btn {
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.08);
@@ -407,7 +367,6 @@
         }
         .opt-btn:active:not(:disabled) { transform: translateY(0); }
         .opt-btn:disabled { opacity: 0.4; cursor: default; }
-
         .opt-btn .opt-key {
             font-family: 'Share Tech Mono', monospace;
             font-size: 9px;
@@ -416,7 +375,6 @@
             margin-bottom: 3px;
             letter-spacing: 0.15em;
         }
-
         /* Feedback */
         .feedback-zone {
             display: none;
@@ -424,7 +382,6 @@
             gap: 16px;
         }
         .feedback-zone.show { display: flex; }
-
         .feedback-top {
             display: flex;
             gap: 16px;
@@ -451,7 +408,6 @@
             border: 1px solid rgba(255,23,68,0.3);
             color: var(--red);
         }
-
         .res-content { flex: 1; }
         .res-title {
             font-family: 'Barlow Condensed', sans-serif;
@@ -474,7 +430,6 @@
             color: #94a3b8;
             line-height: 1.6;
         }
-
         /* Tags */
         .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
         .tag {
@@ -487,13 +442,11 @@
         .tag.emergency { background: rgba(255,23,68,0.15); color: var(--red); border: 1px solid rgba(255,23,68,0.3); }
         .tag.stable { background: rgba(0,230,118,0.1); color: var(--green); border: 1px solid rgba(0,230,118,0.25); }
         .tag.rate { background: rgba(0,229,255,0.1); color: var(--cyan); border: 1px solid rgba(0,229,255,0.25); }
-
         .feedback-actions {
             display: flex;
             gap: 10px;
             justify-content: flex-end;
         }
-
         .btn-retry {
             padding: 10px 22px;
             background: transparent;
@@ -508,7 +461,6 @@
             transition: all 0.2s;
         }
         .btn-retry:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.3); }
-
         .btn-next {
             padding: 10px 28px;
             background: var(--green);
@@ -524,7 +476,6 @@
             box-shadow: 0 0 20px rgba(0,230,118,0.25);
         }
         .btn-next:hover { background: #00ff87; transform: translateY(-1px); box-shadow: 0 4px 24px rgba(0,230,118,0.4); }
-
         /* ─── Game Over ─────────────────────────────── */
         .gameover {
             text-align: center;
@@ -584,12 +535,10 @@
             transition: all 0.2s;
         }
         .btn-restart:hover { background: var(--green); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,230,118,0.3); }
-
         /* Scrollbar */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
         @media (max-width: 860px) {
             .app { grid-template-columns: 1fr; }
             .sidebar { grid-row: auto; flex-direction: row; flex-wrap: wrap; }
@@ -601,11 +550,9 @@
     </style>
 </head>
 <body>
-
 <div class="app" id="app">
     <!-- ─── SIDEBAR ─── -->
     <div class="sidebar">
-
         <div class="panel">
             <div class="panel-label">Total XP</div>
             <div class="score-num" id="score-val">0000</div>
@@ -615,7 +562,6 @@
                 </div>
             </div>
         </div>
-
         <div class="panel">
             <div class="panel-label">Difficulty</div>
             <div class="diff-track">
@@ -626,7 +572,6 @@
             </div>
             <div class="diff-label" id="diff-label">INTERN</div>
         </div>
-
         <div class="panel">
             <div class="panel-label">Patient Stability</div>
             <div class="health-track">
@@ -634,7 +579,6 @@
             </div>
             <div class="health-note" id="health-note">HEMODYNAMICALLY STABLE</div>
         </div>
-
         <div class="panel">
             <div class="panel-label">Rhythm Progress</div>
             <div class="progress-row">
@@ -642,7 +586,6 @@
             </div>
             <div class="queue-bar" id="queue-bar"></div>
         </div>
-
         <div class="panel">
             <div class="panel-label">ICU Event Log</div>
             <div class="log-list" id="log-list">
@@ -650,21 +593,16 @@
                 <div class="log-entry">▸ Lead II active</div>
             </div>
         </div>
-
     </div>
-
     <!-- ─── MAIN ─── -->
     <div style="display:flex;flex-direction:column;gap:14px;">
-
         <!-- Monitor -->
         <div class="monitor-wrap" id="monitor-wrap">
             <canvas id="ekg-canvas"></canvas>
-
             <div class="monitor-hud-tl">
                 <div class="hud-lead">II</div>
                 <div class="hud-sub">25mm/s · ×1.0</div>
             </div>
-
             <div class="monitor-hud-tr">
                 <div class="hud-hr" id="hr-val">---</div>
                 <div class="hud-bpm">BPM</div>
@@ -674,14 +612,12 @@
                     <div class="hud-vital" style="color:#e040fb"><span>TEMP </span>37.1</div>
                 </div>
             </div>
-
             <div class="monitor-hud-bl" id="bed-label">BED 09 · ICU TELEMETRY</div>
             <div class="monitor-hud-br">
                 <div class="pulse-dot"></div>
                 <div class="live-text">LIVE</div>
             </div>
         </div>
-
         <!-- Interaction -->
         <div class="interaction">
             <!-- Question header -->
@@ -693,12 +629,9 @@
                         <span id="q-choices-note">4 OPTIONS</span>
                     </div>
                 </div>
-                <div class="timer-track">
-                    <div class="timer-fill" id="timer-fill" style="width:100%;background:var(--cyan)"></div>
-                </div>
+                <!-- Timer removed: students now have unlimited time to study the strip -->
                 <div class="options-grid" id="options-grid"></div>
             </div>
-
             <!-- Feedback -->
             <div class="feedback-zone" id="feedback-zone">
                 <div class="feedback-top">
@@ -718,7 +651,6 @@
         </div>
     </div>
 </div>
-
 <script>
 // ─────────────────────────────────────────────
 // RHYTHM LIBRARY
@@ -1069,29 +1001,24 @@ const RHYTHMS = {
         }
     }
 };
-
 // ─────────────────────────────────────────────
 // DIFFICULTY SYSTEM
 // ─────────────────────────────────────────────
 const DIFFICULTY_LEVELS = [
-    { level: 1, label: "INTERN",   minCorrect: 0,  timeMs: 18000, choices: 4, pool: [1,2] },
-    { level: 2, label: "RESIDENT", minCorrect: 4,  timeMs: 13000, choices: 4, pool: [1,2,3] },
-    { level: 3, label: "FELLOW",   minCorrect: 9,  timeMs: 9000,  choices: 5, pool: [1,2,3,4] },
-    { level: 4, label: "ATTENDING",minCorrect: 15, timeMs: 6000,  choices: 6, pool: [1,2,3,4] },
+    { level: 1, label: "INTERN",    minCorrect: 0,  choices: 4, pool: [1,2] },
+    { level: 2, label: "RESIDENT",  minCorrect: 4,  choices: 4, pool: [1,2,3] },
+    { level: 3, label: "FELLOW",    minCorrect: 9,  choices: 5, pool: [1,2,3,4] },
+    { level: 4, label: "ATTENDING", minCorrect: 15, choices: 6, pool: [1,2,3,4] },
 ];
-
 // ─────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────
 let score = 0, streak = 0, health = 100, correctCount = 0;
 let currentRhythm = null, currentChoices = [];
-let timerInterval = null, timeRemaining = 1;
 let hasFailedCurrent = false;
-
 // No-repeat queue
 const rhythmKeys = Object.keys(RHYTHMS);
 let rhythmQueue = [], seenCount = 0;
-
 // Canvas
 const canvas = document.getElementById('ekg-canvas');
 const ctx = canvas.getContext('2d');
@@ -1099,7 +1026,6 @@ let scanX = 0, waveY = 0;
 const SCAN_SPEED = 2.8;
 let prevY = null;
 let animId = null;
-
 // ─────────────────────────────────────────────
 // QUEUE
 // ─────────────────────────────────────────────
@@ -1114,27 +1040,22 @@ function buildQueue(diffLevel) {
     }
     return arr;
 }
-
 function getDiffLevel() {
     for (let i = DIFFICULTY_LEVELS.length - 1; i >= 0; i--) {
         if (correctCount >= DIFFICULTY_LEVELS[i].minCorrect) return i;
     }
     return 0;
 }
-
 function nextFromQueue() {
     const di = getDiffLevel();
     const pool = DIFFICULTY_LEVELS[di].pool;
     const eligible = rhythmKeys.filter(k => pool.includes(RHYTHMS[k].difficulty));
-
     // Filter queue to eligible rhythms only
     while (rhythmQueue.length === 0 || !eligible.includes(rhythmQueue[0])) {
-        // Rebuild queue if empty or stale
         rhythmQueue = buildQueue(di + 1);
     }
     return rhythmQueue.shift();
 }
-
 // ─────────────────────────────────────────────
 // RENDER PROGRESS DOTS
 // ─────────────────────────────────────────────
@@ -1143,20 +1064,17 @@ function renderQueueDots() {
     const bar = document.getElementById('queue-bar');
     bar.innerHTML = '';
     document.getElementById('progress-text').innerText = `${seenCount} / ${total} seen`;
-    const seenKeys = new Set(rhythmKeys.slice(0, seenCount));
     rhythmKeys.forEach((k, i) => {
         const d = document.createElement('div');
         d.className = 'queue-dot' + (k === currentRhythm?.__key ? ' current' : i < seenCount ? ' done' : '');
         bar.appendChild(d);
     });
 }
-
 // ─────────────────────────────────────────────
 // DIFFICULTY UI
 // ─────────────────────────────────────────────
 const diffColors = ['var(--green)', '#ccff00', '#ff9100', 'var(--red)'];
 const diffClasses = ['', 'l2', 'l3', 'l4'];
-
 function updateDifficultyUI() {
     const di = getDiffLevel();
     const d = DIFFICULTY_LEVELS[di];
@@ -1165,13 +1083,11 @@ function updateDifficultyUI() {
     document.getElementById('q-diff-tag').innerText = `LEVEL ${di + 1} · ${d.label}`;
     document.getElementById('q-diff-tag').style.color = diffColors[di];
     document.getElementById('q-choices-note').innerText = `${d.choices} OPTIONS`;
-
     for (let i = 1; i <= 4; i++) {
         const pip = document.getElementById('d' + i);
         pip.className = 'diff-pip' + (i <= di + 1 ? ` active ${diffClasses[di]}` : '');
     }
 }
-
 // ─────────────────────────────────────────────
 // CANVAS
 // ─────────────────────────────────────────────
@@ -1182,16 +1098,13 @@ function resizeCanvas() {
     waveY = canvas.height / 2 + 10;
     scanX = 0; prevY = null;
 }
-
 function drawLoop() {
     // Erase ahead of scan (sweeper)
     ctx.clearRect(scanX, 0, 50, canvas.height);
-
     // Draw line segment
     if (prevY !== null && scanX > 0) {
         const val = currentRhythm ? currentRhythm.draw(Date.now() / 9) : 0;
         const targetY = waveY + val;
-
         ctx.beginPath();
         ctx.moveTo(scanX - SCAN_SPEED, prevY);
         ctx.lineTo(scanX, targetY);
@@ -1201,23 +1114,19 @@ function drawLoop() {
         ctx.shadowBlur = 14;
         ctx.shadowColor = '#00e676';
         ctx.stroke();
-
         prevY = targetY;
     } else {
         const val = currentRhythm ? currentRhythm.draw(Date.now() / 9) : 0;
         prevY = waveY + val;
     }
-
     scanX += SCAN_SPEED;
     if (scanX >= canvas.width) {
         scanX = 0;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         prevY = null;
     }
-
     animId = requestAnimationFrame(drawLoop);
 }
-
 // ─────────────────────────────────────────────
 // LOAD PATIENT
 // ─────────────────────────────────────────────
@@ -1227,30 +1136,24 @@ function loadPatient() {
     document.getElementById('question-zone').style.display = '';
     document.getElementById('retry-btn').style.display = 'none';
     hasFailedCurrent = false;
-
+    prevY = null; // reset waveform continuity on new case
     // Pick rhythm
     const key = nextFromQueue();
     currentRhythm = { ...RHYTHMS[key], __key: key };
     seenCount++;
-
     updateDifficultyUI();
-
     // HR
     document.getElementById('hr-val').innerText = currentRhythm.hr || '---';
-
     // Bed label
     document.getElementById('bed-label').innerText =
         `BED ${String(Math.floor(Math.random() * 20 + 1)).padStart(2,'0')} · ICU TELEMETRY`;
-
     // Generate choices
     const di = getDiffLevel();
     const numChoices = DIFFICULTY_LEVELS[di].choices;
     currentChoices = [currentRhythm.name];
-
     // Add distractors — at higher levels, pick rhythms with same difficulty
     const allNames = rhythmKeys.map(k => RHYTHMS[k].name);
     let candidates = allNames.filter(n => n !== currentRhythm.name);
-
     // At harder levels, bias towards same-difficulty distractors
     if (di >= 2) {
         const sameDiff = rhythmKeys
@@ -1262,25 +1165,20 @@ function loadPatient() {
             candidates = candidates.filter(n => !currentChoices.includes(n));
         }
     }
-
     while (currentChoices.length < numChoices && candidates.length > 0) {
         const idx = Math.floor(Math.random() * candidates.length);
         currentChoices.push(candidates[idx]);
         candidates.splice(idx, 1);
     }
-
     currentChoices.sort(() => Math.random() - 0.5);
     renderOptions();
-    startTimer();
     renderQueueDots();
     addLog(`▸ New case: Bed ${String(Math.floor(Math.random()*20+1)).padStart(2,'0')} · ${DIFFICULTY_LEVELS[di].label}`, 'new');
 }
-
 // ─────────────────────────────────────────────
 // OPTIONS
 // ─────────────────────────────────────────────
 const hotkeys = ['A','B','C','D','E','F'];
-
 function renderOptions() {
     const grid = document.getElementById('options-grid');
     grid.innerHTML = '';
@@ -1292,61 +1190,21 @@ function renderOptions() {
         grid.appendChild(btn);
     });
 }
-
-// ─────────────────────────────────────────────
-// TIMER
-// ─────────────────────────────────────────────
-function startTimer() {
-    const di = getDiffLevel();
-    const totalMs = DIFFICULTY_LEVELS[di].timeMs;
-    timeRemaining = 1;
-    const fill = document.getElementById('timer-fill');
-    fill.style.transition = 'none';
-    fill.style.width = '100%';
-    if (timerInterval) clearInterval(timerInterval);
-
-    const step = 50;
-    const decrement = step / totalMs;
-
-    timerInterval = setInterval(() => {
-        timeRemaining -= decrement;
-        const pct = Math.max(0, timeRemaining * 100);
-        fill.style.transition = `width ${step}ms linear`;
-        fill.style.width = pct + '%';
-
-        // Color shift
-        if (pct < 25) {
-            fill.style.background = 'var(--red)';
-        } else if (pct < 50) {
-            fill.style.background = 'var(--yellow)';
-        } else {
-            fill.style.background = 'var(--cyan)';
-        }
-
-        if (timeRemaining <= 0) handleAnswer(null);
-    }, step);
-}
-
 // ─────────────────────────────────────────────
 // ANSWER
 // ─────────────────────────────────────────────
 function handleAnswer(choice) {
-    clearInterval(timerInterval);
     document.getElementById('question-zone').style.display = 'none';
     const fz = document.getElementById('feedback-zone');
     fz.classList.add('show');
-
     const isCorrect = choice === currentRhythm.name;
-
     const icon = document.getElementById('res-icon');
     const title = document.getElementById('res-title');
     const rhythmLabel = document.getElementById('res-rhythm');
     const body = document.getElementById('res-body');
     const tagRow = document.getElementById('tag-row');
-
     rhythmLabel.innerText = `▸ ${currentRhythm.name}`;
     body.innerText = currentRhythm.info;
-
     // Tags
     tagRow.innerHTML = '';
     currentRhythm.tags.forEach(t => {
@@ -1355,14 +1213,12 @@ function handleAnswer(choice) {
         span.innerText = t;
         tagRow.appendChild(span);
     });
-
     if (isCorrect) {
         if (!hasFailedCurrent) {
             streak++;
             const di = getDiffLevel();
-            const speedBonus = Math.floor(timeRemaining * 80);
             const diffBonus = di + 1;
-            const pts = (100 + speedBonus) * streak * diffBonus;
+            const pts = 100 * streak * diffBonus;
             score += pts;
             correctCount++;
             addLog(`▸ Correct — ${currentRhythm.name} [+${pts} XP]`, 'new');
@@ -1385,27 +1241,22 @@ function handleAnswer(choice) {
         icon.className = 'res-icon wrong';
         icon.innerText = '!';
         title.className = 'res-title wrong';
-        title.innerText = choice === null ? 'Critical Delay' : 'Clinical Oversight';
+        title.innerText = 'Clinical Oversight';
         body.innerText = `The correct rhythm is "${currentRhythm.name}". ${currentRhythm.info}`;
         document.getElementById('retry-btn').style.display = '';
     }
-
     document.getElementById('score-val').innerText = String(score).padStart(4, '0');
     document.getElementById('streak-val').innerText = streak;
     document.getElementById('streak-badge').style.opacity = streak > 1 ? '1' : '0';
-
     if (health <= 0) { setTimeout(triggerGameOver, 600); return; }
     updateDifficultyUI();
 }
-
 function retryRound() {
     document.getElementById('feedback-zone').classList.remove('show');
     document.getElementById('question-zone').style.display = '';
     document.getElementById('retry-btn').style.display = 'none';
     renderOptions();
-    startTimer();
 }
-
 // ─────────────────────────────────────────────
 // HEALTH
 // ─────────────────────────────────────────────
@@ -1428,7 +1279,6 @@ function updateHealth() {
         fill.style.boxShadow = '0 0 10px rgba(0,230,118,0.4)';
     }
 }
-
 // ─────────────────────────────────────────────
 // LOG
 // ─────────────────────────────────────────────
@@ -1441,14 +1291,11 @@ function addLog(msg, type = '') {
     // Keep log short
     while (list.children.length > 14) list.removeChild(list.lastChild);
 }
-
 // ─────────────────────────────────────────────
 // GAME OVER
 // ─────────────────────────────────────────────
 function triggerGameOver() {
     cancelAnimationFrame(animId);
-    clearInterval(timerInterval);
-
     document.getElementById('app').innerHTML = `
         <div style="grid-column:1/-1;display:flex;justify-content:center;">
         <div class="gameover">
@@ -1467,7 +1314,6 @@ function triggerGameOver() {
         </div>
     `;
 }
-
 // ─────────────────────────────────────────────
 // KEYBOARD HOTKEYS
 // ─────────────────────────────────────────────
@@ -1478,17 +1324,14 @@ document.addEventListener('keydown', e => {
         handleAnswer(currentChoices[idx]);
     }
 });
-
 // ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
 document.getElementById('next-btn').onclick = loadPatient;
 document.getElementById('retry-btn').onclick = retryRound;
 window.addEventListener('resize', resizeCanvas);
-
 window.onload = () => {
     resizeCanvas();
-    // Pre-build initial queue
     rhythmQueue = buildQueue(1);
     loadPatient();
     drawLoop();
